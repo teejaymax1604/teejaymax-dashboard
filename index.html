@@ -1360,8 +1360,9 @@ textarea { resize: vertical; line-height: 1.7; }
       </div>
     </div>
     <div id="cjLiveBar" style="display:none;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--green);margin-bottom:6px;font-family:var(--font-mono)">🔗 CJ LIVE CATALOG — search any product to see real supplier listings</div>
       <div style="display:flex;gap:10px">
-        <input type="text" id="cjSearchInput" placeholder="Search CJ live catalog: any product keyword..." style="flex:1">
+        <input type="text" id="cjSearchInput" placeholder="Search CJ live catalog: any product keyword..." style="flex:1" onkeydown="if(event.key==='Enter')searchCJProducts()">
         <button class="btn btn-accent btn-sm" onclick="searchCJProducts()">🔍 Search CJ Live</button>
       </div>
     </div>
@@ -3579,36 +3580,29 @@ async function searchCJProducts() {
     return;
   }
 
-  const query = document.getElementById('cjSearchInput').value.trim();
-  if (!query) { toast('⚠ Enter a product to search'); return; }
+  const q = (document.getElementById('cjSearchInput').value || '').trim();
+  if (!q) { toast('⚠ Enter a product keyword to search'); return; }
 
   const grid = document.getElementById('productsGrid');
-  grid.innerHTML = '<div style="text-align:center;padding:60px;color:var(--muted2)"><div class="spin" style="width:24px;height:24px;margin:0 auto 12px"></div><div>Searching CJ catalog for "' + query + '"...</div></div>';
+  grid.innerHTML = '<div style="text-align:center;padding:60px;color:var(--muted2)"><div class="spin" style="width:24px;height:24px;margin:0 auto 12px"></div><div style="font-size:13px">Searching CJ for "' + q + '"...</div></div>';
 
   try {
-    const query = document.getElementById('cjSearchInput').value.trim();
     const response = await fetch(
-      `${cjProxyUrl}?endpoint=product/query&productName=${encodeURIComponent(query)}&pageNum=1&pageSize=20`,
-      {
-        method: 'GET',
-        headers: {
-          'CJ-Access-Token': cjAccessToken,
-          'Content-Type': 'application/json'
-        }
-      }
+      cjProxyUrl + '?endpoint=product/query&productName=' + encodeURIComponent(q) + '&pageNum=1&pageSize=20',
+      { method: 'GET', headers: { 'CJ-Access-Token': cjAccessToken, 'Content-Type': 'application/json' } }
     );
-
     const data = await response.json();
-
     if (data.code === 200 && data.data && data.data.list) {
       renderCJProducts(data.data.list);
-      toast('✅ Found ' + data.data.list.length + ' live products from CJ');
+      toast('✅ Found ' + data.data.list.length + ' products from CJ');
     } else {
-      throw new Error(data.message || 'Search failed');
+      throw new Error(data.message || data.msg || 'Search failed');
     }
   } catch (err) {
-    toast('⚠ Search failed: ' + err.message);
-    grid.innerHTML = '<div style="text-align:center;padding:60px;color:var(--muted2)"><div style="font-size:14px">Search failed — make sure your proxy is deployed and connected in Settings.</div></div>';
+    toast('⚠ CJ search failed: ' + err.message);
+    grid.innerHTML = '<div style="text-align:center;padding:60px;color:var(--muted2);font-size:13px">CJ search failed — check your connection in Settings.</div>';
+    // Restore curated products as fallback
+    setTimeout(renderProducts, 1500);
   }
 }
 

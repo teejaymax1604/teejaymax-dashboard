@@ -244,8 +244,8 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 
   window.onload = () => {
     if(localStorage.getItem('tmx_theme') === 'light') { document.body.classList.add('light-mode'); }
-    // IMPORTANT: Changed storage key to v7 to ensure a completely fresh start
-    const saved = localStorage.getItem('tmx_leads_v7');
+    // V8 forces a clean slate to flush bad links
+    const saved = localStorage.getItem('tmx_leads_v8');
     if (saved) { leads = JSON.parse(saved); filterAndRender(); }
   };
 
@@ -269,36 +269,29 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     if (!raw) return '';
     raw = raw.trim();
 
-    // 1. If it's already a full, perfectly valid URL, return it immediately.
-    if (raw.startsWith('http://') || raw.startsWith('https://')) {
-        // Fix the specific Bootleads double-paste glitch
-        if (raw.includes('https://', 8)) {
-            raw = 'https://' + raw.split('https://').pop();
-        }
+    // If it's a completely different website (like linktr.ee) and already formatted, let it through
+    if (raw.startsWith('http') && !raw.includes('instagram') && !raw.includes('facebook') && !raw.includes('twitter') && !raw.includes('x.com') && !raw.includes('tiktok') && !raw.includes('youtube') && !raw.includes('linkedin')) {
         return raw;
     }
 
-    // 2. Aggressively strip any domain artifacts if they forgot the 'https://'
-    raw = raw.replace(/^(www\.)?instagram\.com\/?(@)?/i, '');
-    raw = raw.replace(/^(www\.)?facebook\.com\/?/i, '');
-    raw = raw.replace(/^(www\.)?twitter\.com\/?(@)?/i, '');
-    raw = raw.replace(/^(www\.)?x\.com\/?(@)?/i, '');
-    raw = raw.replace(/^(www\.)?tiktok\.com\/?(@)?/i, '');
-    raw = raw.replace(/^(www\.)?youtube\.com\/?/i, '');
-    raw = raw.replace(/^(www\.)?linkedin\.com\/(company\/|in\/)?/i, '');
-    
-    // 3. Strip any stray @ symbols that Bootleads leaves behind
-    raw = raw.replace(/^@/, '');
-    
-    // 4. Catch entirely different websites stuffed in the wrong column (like a Linktree)
-    if (raw.includes('.com') || raw.includes('.net') || raw.includes('.co') || raw.includes('.ee')) {
-      return 'https://' + raw;
+    // 1. Strip all known social domains to isolate just the handle
+    raw = raw.replace(/^(https?:\/\/)?(www\.)?instagram\.com\/?/i, '');
+    raw = raw.replace(/^(https?:\/\/)?(www\.)?facebook\.com\/?/i, '');
+    raw = raw.replace(/^(https?:\/\/)?(www\.)?twitter\.com\/?/i, '');
+    raw = raw.replace(/^(https?:\/\/)?(www\.)?x\.com\/?/i, '');
+    raw = raw.replace(/^(https?:\/\/)?(www\.)?tiktok\.com\/?/i, '');
+    raw = raw.replace(/^(https?:\/\/)?(www\.)?youtube\.com\/?/i, '');
+    raw = raw.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/(company\/|in\/)?/i, '');
+
+    // 2. Clean up the isolated handle
+    if (!baseUrl.includes('youtube.com')) {
+      raw = raw.replace(/^@/, '');   // Remove leading @ except for YouTube
     }
+    raw = raw.replace(/^\//, '');    // Remove leading slash
+    raw = raw.split('?')[0];         // Remove tracking parameters (like ?igshid=...)
+    raw = raw.replace(/\/$/, '');    // Remove trailing slash
 
-    // 5. Clean trailing slashes
-    if (raw.endsWith('/')) raw = raw.slice(0, -1);
-
-    // 6. Rebuild the perfect URL
+    // 3. Rebuild perfect URL
     return baseUrl + raw;
   }
 
@@ -500,7 +493,7 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     document.getElementById('profile-modal').classList.remove('open');
   }
 
-  function saveData() { localStorage.setItem('tmx_leads_v7', JSON.stringify(leads)); }
+  function saveData() { localStorage.setItem('tmx_leads_v8', JSON.stringify(leads)); }
   function clearData() { if(confirm('Are you sure you want to clear all leads?')) { leads = []; saveData(); filterAndRender(); } }
 </script>
 

@@ -67,8 +67,17 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 
 /* ── LEADS GRID & CARDS ── */
 .leads-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
-.lcard{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);padding:20px;display:flex;flex-direction:column;transition:all 0.2s;position:relative;}
-.lcard:hover{border-color:var(--border3); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.15);}
+.lcard{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);padding:20px;display:flex;flex-direction:column;transition:all 0.3s ease;position:relative;}
+.lcard:hover{transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.15);}
+
+/* ── CARD STATUS COLOR CODING ── */
+.lcard[data-status="Not Contacted"] { border-color: var(--border2); }
+.lcard[data-status="Emailed"] { border-color: rgba(96, 165, 250, 0.5); background: rgba(96, 165, 250, 0.05); box-shadow: 0 4px 20px rgba(96, 165, 250, 0.1); }
+.lcard[data-status="Replied"] { border-color: rgba(251, 191, 36, 0.5); background: rgba(251, 191, 36, 0.05); box-shadow: 0 4px 20px rgba(251, 191, 36, 0.1); }
+.lcard[data-status="Closed"] { border-color: rgba(52, 211, 153, 0.5); background: rgba(52, 211, 153, 0.05); box-shadow: 0 4px 20px rgba(52, 211, 153, 0.1); }
+.lcard[data-status="Discarded"] { border-color: rgba(248, 113, 113, 0.3); background: rgba(248, 113, 113, 0.03); opacity: 0.6; }
+.lcard[data-status="Discarded"]:hover { opacity: 0.9; border-color: rgba(248, 113, 113, 0.6); }
+
 .lcard-head{display:flex;justify-content:space-between;margin-bottom:8px;}
 .lcard-name{font-family:var(--fh);font-size:16px;font-weight:700;}
 .niche-tag{font-size:10px;font-family:var(--fm);padding:4px 10px;border-radius:99px;background:var(--accentbg);border:1px solid rgba(124,92,191,0.2);color:var(--accent3);display:inline-block;margin-bottom:12px;}
@@ -83,7 +92,7 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 
 .status-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px; padding-top: 12px; border-top: 1px solid var(--border2);}
 .status-label{font-size:10px;font-family:var(--fm);text-transform:uppercase;color:var(--muted);}
-.status-sel{font-size:11px;padding:4px 8px;border-radius:6px;background:var(--surface2); cursor: pointer; color: var(--text); border: 1px solid var(--border3);}
+.status-sel{font-size:11px;padding:4px 8px;border-radius:6px;background:var(--surface2); cursor: pointer; color: var(--text); border: 1px solid var(--border3); font-weight: 600;}
 
 .socials-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
 .social-btn{padding:6px 10px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;border:1px solid var(--border2);background:var(--surface2);color:var(--muted2);transition:all 0.15s; display: flex; align-items: center; gap: 6px;}
@@ -156,6 +165,7 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
         <option value="Emailed">Emailed</option>
         <option value="Replied">Replied</option>
         <option value="Closed">Closed 🎉</option>
+        <option value="Discarded">Discarded 🗑️</option>
       </select>
       <button class="btn" onclick="clearData()" style="color: var(--red); border-color: rgba(248,113,113,0.3);"><i class="fa-solid fa-trash-can"></i> Clear All</button>
     </div>
@@ -205,19 +215,16 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 <script>
   let leads = [];
   let filteredLeads = [];
-  let displayCount = 50; // CPU Protection: Render in chunks of 50
+  let displayCount = 50; 
 
-  // Native Country Expansion (Super lightweight API built into the browser)
   const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
 
-  // DOM Elements
   const dropZone = document.getElementById('drop-zone');
   const fileInput = document.getElementById('file-input');
   const leadsGrid = document.getElementById('leads-grid');
   const leadsBar = document.getElementById('leads-bar');
   const scrollArea = document.getElementById('scroll-area');
   
-  // Listeners
   dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = 'var(--accent2)'; });
   dropZone.addEventListener('dragleave', () => dropZone.style.borderColor = 'var(--border3)');
   dropZone.addEventListener('drop', e => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); });
@@ -226,7 +233,6 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
   document.getElementById('search').addEventListener('input', () => { displayCount = 50; filterAndRender(); });
   document.getElementById('filter-status').addEventListener('change', () => { displayCount = 50; filterAndRender(); });
 
-  // Infinite Scroll Listener
   scrollArea.addEventListener('scroll', () => {
     if (scrollArea.scrollTop + scrollArea.clientHeight >= scrollArea.scrollHeight - 100) {
       if (displayCount < filteredLeads.length) {
@@ -236,12 +242,9 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     }
   });
 
-  // Initialize
   window.onload = () => {
-    // Check Theme
     if(localStorage.getItem('tmx_theme') === 'light') { document.body.classList.add('light-mode'); }
-    // Load Data
-    const saved = localStorage.getItem('tmx_leads_v5');
+    const saved = localStorage.getItem('tmx_leads_v6');
     if (saved) { leads = JSON.parse(saved); filterAndRender(); }
   };
 
@@ -276,7 +279,7 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     if (code.length === 2) {
       try { return regionNames.of(code); } catch(e) { return code; }
     }
-    return code; // Already full name or invalid code
+    return code; 
   }
 
   function processCSV(rows, headers) {
@@ -296,7 +299,6 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
       let email = getVal(row, ['emails', 'email 1', 'email']);
       if (email && email.includes(',')) email = email.split(',')[0].trim();
       
-      // Smart Location Parsing
       let city = getVal(row, ['city']);
       let state = getVal(row, ['state', 'region', 'province']);
       let rawCountry = getVal(row, ['country', 'country code']);
@@ -336,7 +338,6 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     saveData();
     filterAndRender();
     
-    // Reset dropzone visually
     dropZone.innerHTML = '<input type="file" id="file-input" accept=".csv"><div class="upload-title">Drop Bootleads CSV Here</div><div style="color: var(--muted2);">Processed locally. Zero server uploads.</div>';
   }
 
@@ -366,12 +367,11 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     updateStats();
   }
 
-  // Renders only the allowed chunk to prevent CPU overload
   function renderGridChunk() {
     const toRender = filteredLeads.slice(0, displayCount);
     
     leadsGrid.innerHTML = toRender.map(l => `
-      <div class="lcard">
+      <div class="lcard" id="card-${l.id}" data-status="${l.status}">
         <div class="lcard-head">
           <div class="lcard-name">${l.name}</div>
         </div>
@@ -399,6 +399,7 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
             <option value="Emailed" ${l.status === 'Emailed' ? 'selected' : ''}>Emailed</option>
             <option value="Replied" ${l.status === 'Replied' ? 'selected' : ''}>Replied</option>
             <option value="Closed" ${l.status === 'Closed' ? 'selected' : ''}>Closed 🎉</option>
+            <option value="Discarded" ${l.status === 'Discarded' ? 'selected' : ''}>Discarded 🗑️</option>
           </select>
         </div>
 
@@ -408,7 +409,6 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
       </div>
     `).join('');
 
-    // Add loader trigger text if more exist
     if (displayCount < filteredLeads.length) {
       leadsGrid.innerHTML += `<div class="load-more-container"><span style="color:var(--muted2); font-size:12px;"><i class="fa-solid fa-spinner fa-spin"></i> Scroll for more leads...</span></div>`;
     }
@@ -416,15 +416,24 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 
   function updateStatus(id, val) {
     const lead = leads.find(l => l.id === id);
-    if (lead) { lead.status = val; saveData(); updateStats(); }
+    if (lead) { 
+      lead.status = val; 
+      saveData(); 
+      updateStats(); 
+      
+      // Update the UI immediately without re-rendering the whole grid
+      const card = document.getElementById(`card-${id}`);
+      if (card) {
+        card.setAttribute('data-status', val);
+      }
+    }
   }
 
   function updateStats() {
     document.getElementById('stat-total').innerText = leads.length;
-    document.getElementById('stat-contacted').innerText = leads.filter(l => l.status !== 'Not Contacted').length;
+    document.getElementById('stat-contacted').innerText = leads.filter(l => l.status !== 'Not Contacted' && l.status !== 'Discarded').length;
   }
 
-  // Profile Modal
   function openProfile(id) {
     const l = leads.find(x => x.id === id);
     if(!l) return;
@@ -445,7 +454,6 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     document.getElementById('pm-email').innerHTML = l.email ? `<a href="mailto:${l.email}" style="color:var(--accent2);">${l.email}</a>` : 'No email provided';
     document.getElementById('pm-followers').innerText = l.followers || 'No data';
 
-    // Socials Array
     let socialsHtml = '';
     if(l.ig) socialsHtml += `<a href="${l.ig}" target="_blank" class="social-btn ig"><i class="fa-brands fa-instagram"></i> Instagram</a>`;
     if(l.wa) socialsHtml += `<a href="${l.wa}" target="_blank" class="social-btn wa"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>`;
@@ -464,7 +472,7 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     document.getElementById('profile-modal').classList.remove('open');
   }
 
-  function saveData() { localStorage.setItem('tmx_leads_v5', JSON.stringify(leads)); }
+  function saveData() { localStorage.setItem('tmx_leads_v6', JSON.stringify(leads)); }
   function clearData() { if(confirm('Are you sure you want to clear all leads?')) { leads = []; saveData(); filterAndRender(); } }
 </script>
 

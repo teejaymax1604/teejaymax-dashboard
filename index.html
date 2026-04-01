@@ -62,7 +62,7 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 /* ── UPLOAD ZONE ── */
 .upload-zone{border:2px dashed var(--border3);border-radius:var(--rl);padding:60px 24px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface);margin-bottom:24px;position:relative}
 .upload-zone:hover{border-color:var(--accent2);background:var(--accentbg)}
-.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer; z-index: 2;}
 .upload-title{font-family:var(--fh);font-size:18px;font-weight:700;margin-bottom:8px}
 
 /* ── LEADS GRID & CARDS ── */
@@ -172,8 +172,10 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 
     <div class="upload-zone" id="drop-zone">
       <input type="file" id="file-input" accept=".csv">
-      <div class="upload-title">Drop Bootleads CSV Here</div>
-      <div style="color: var(--muted2);">Processed locally. Zero server uploads.</div>
+      <div id="drop-zone-text">
+        <div class="upload-title">Drop Bootleads CSV Here</div>
+        <div style="color: var(--muted2);">Processed locally. Zero server uploads.</div>
+      </div>
     </div>
 
     <div class="leads-grid" id="leads-grid"></div>
@@ -221,6 +223,7 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 
   const dropZone = document.getElementById('drop-zone');
   const fileInput = document.getElementById('file-input');
+  const dropZoneText = document.getElementById('drop-zone-text');
   const leadsGrid = document.getElementById('leads-grid');
   const leadsBar = document.getElementById('leads-bar');
   const scrollArea = document.getElementById('scroll-area');
@@ -244,8 +247,8 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 
   window.onload = () => {
     if(localStorage.getItem('tmx_theme') === 'light') { document.body.classList.add('light-mode'); }
-    // V11 forces a clean slate to flush bad link associations
-    const saved = localStorage.getItem('tmx_leads_v11');
+    // V12 utilizes the new Normalized Extraction Engine
+    const saved = localStorage.getItem('tmx_leads_v12');
     if (saved) { leads = JSON.parse(saved); filterAndRender(); }
   };
 
@@ -256,15 +259,18 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 
   function handleFile(file) {
     if (!file) return;
-    dropZone.innerHTML = '<div class="upload-title">Processing Data...</div>';
+    dropZoneText.innerHTML = '<div class="upload-title">Processing Data...</div>';
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      complete: (results) => processCSV(results.data, results.meta.fields)
+      complete: (results) => {
+        processCSV(results.data, results.meta.fields);
+        // Reset the file input so the user can upload the same file again later if needed
+        fileInput.value = ''; 
+      }
     });
   }
 
-  // BULLETPROOF SOCIAL URL PARSER + IP FILTER
   function buildSocialLink(raw, platform) {
       if (!raw) return '';
       raw = String(raw).trim();
@@ -294,11 +300,9 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
           
           if (urlObj.hostname.includes('.')) {
               if (urlObj.hostname.includes('linktr.ee')) return urlObj.href; 
-              return ''; // Not a linktree, not the platform -> dump it
+              return ''; 
           }
-      } catch(e) {
-          // Fails URL parsing, treat as raw handle below
-      }
+      } catch(e) {}
 
       let handle = raw;
       handle = handle.split('/').pop(); 
@@ -339,23 +343,30 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     return code; 
   }
 
+  // --- THE NORMALIZED EXTRACTION ENGINE ---
+  // This removes spaces, dashes, underscores, and makes everything lowercase.
+  // "Instagram Link" and "instagram_link" both become "instagramlink".
+  function normalizeStr(str) {
+      return String(str).toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+
   function processCSV(rows, headers) {
-    // SMARTER EXTRACTION: Prioritize Exact Matches, Ignore "Follower" columns
+    // Normalizing the actual headers from the CSV once to save performance
+    const normalizedHeaders = headers.map(h => ({ original: h, normalized: normalizeStr(h) }));
+
     const getVal = (row, keys, excludes = []) => {
-      // 1. Exact match (e.g. specifically hunting for "Instagram Link")
-      for (let k of keys) {
-        const match = headers.find(h => h.trim().toLowerCase() === k.toLowerCase());
-        if (match && row[match]) return String(row[match]).trim();
-      }
-      // 2. Partial match (but safely skipping junk like "Instagram Followers")
-      for (let k of keys) {
-        const match = headers.find(h => {
-          const lowerH = h.trim().toLowerCase();
-          const hasKey = lowerH.includes(k.toLowerCase());
-          const hasExclude = excludes.some(ex => lowerH.includes(ex.toLowerCase()));
-          return hasKey && !hasExclude;
-        });
-        if (match && row[match]) return String(row[match]).trim();
+      const normalizedKeys = keys.map(normalizeStr);
+      const normalizedExcludes = excludes.map(normalizeStr);
+
+      // 1. Direct/Fuzzy Match on the normalized strings
+      for (let headerObj of normalizedHeaders) {
+          const isMatch = normalizedKeys.some(key => headerObj.normalized.includes(key));
+          const isExcluded = normalizedExcludes.some(ex => headerObj.normalized.includes(ex));
+          
+          if (isMatch && !isExcluded) {
+              const val = row[headerObj.original];
+              if (val && String(val).trim() !== '') return String(val).trim();
+          }
       }
       return '';
     };
@@ -376,7 +387,6 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
       let locationParts = [city, state, country].filter(part => part && part.length > 0);
       let location = locationParts.join(', ');
 
-      // Use the safe extraction to grab the link, not the followers count
       const socEx = ['follower', 'following', 'count', 'audience'];
       let ig = buildSocialLink(getVal(row, ['instagram link', 'instagram url', 'instagram', 'ig'], socEx), 'instagram');
       let fb = buildSocialLink(getVal(row, ['facebook link', 'facebook url', 'facebook', 'fb'], socEx), 'facebook');
@@ -405,7 +415,8 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     saveData();
     filterAndRender();
     
-    dropZone.innerHTML = '<input type="file" id="file-input" accept=".csv"><div class="upload-title">Drop Bootleads CSV Here</div><div style="color: var(--muted2);">Processed locally. Zero server uploads.</div>';
+    // Reset dropzone visually without destroying the input element
+    dropZoneText.innerHTML = '<div class="upload-title">Drop Bootleads CSV Here</div><div style="color: var(--muted2);">Processed locally. Zero server uploads.</div>';
   }
 
   function filterAndRender() {
@@ -538,8 +549,17 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     document.getElementById('profile-modal').classList.remove('open');
   }
 
-  function saveData() { localStorage.setItem('tmx_leads_v11', JSON.stringify(leads)); }
-  function clearData() { if(confirm('Are you sure you want to clear all leads?')) { leads = []; saveData(); filterAndRender(); } }
+  function saveData() { localStorage.setItem('tmx_leads_v12', JSON.stringify(leads)); }
+  
+  function clearData() { 
+    if(confirm('Are you sure you want to clear all leads?')) { 
+        leads = []; 
+        saveData(); 
+        filterAndRender();
+        // Reset file input on clear so a new (or same) file can be selected
+        document.getElementById('file-input').value = ''; 
+    } 
+  }
 </script>
 
 </body>

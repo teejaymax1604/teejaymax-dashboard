@@ -244,8 +244,8 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 
   window.onload = () => {
     if(localStorage.getItem('tmx_theme') === 'light') { document.body.classList.add('light-mode'); }
-    // IMPORTANT: Bumped to v9 to flush out all corrupted links
-    const saved = localStorage.getItem('tmx_leads_v9');
+    // V10 forces a clean slate to flush the IP address glitches out of cache
+    const saved = localStorage.getItem('tmx_leads_v10');
     if (saved) { leads = JSON.parse(saved); filterAndRender(); }
   };
 
@@ -264,12 +264,17 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     });
   }
 
-  // BULLETPROOF SOCIAL URL PARSER
+  // BULLETPROOF SOCIAL URL PARSER + IP FILTER
   function buildSocialLink(raw, platform) {
       if (!raw) return '';
       raw = String(raw).trim();
       const lower = raw.toLowerCase();
       if (lower === 'n/a' || lower === '-' || lower === 'null' || lower === 'none') return '';
+
+      // NEW: JUNK FILTER - Kill IP Addresses (Bootleads Glitch)
+      let checkJunk = raw.replace(/^@/, '').trim();
+      const ipRegex = /^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/;
+      if (ipRegex.test(checkJunk)) return ''; // It's an IP address. Discard it.
 
       // Temporarily attach https to test if it's a valid URL
       let testUrl = raw.startsWith('http') ? raw : 'https://' + raw;
@@ -285,12 +290,10 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
               return urlObj.href; // Keep params for FB/LinkedIn
           }
           
-          // 2. If Bootleads pasted an entirely different website (like their store domain or linktree), discard it
+          // 2. If Bootleads pasted an entirely different website (like their store domain), discard it
           if (urlObj.hostname.includes('.')) {
-              if (urlObj.hostname.includes('.com') || urlObj.hostname.includes('.net') || urlObj.hostname.includes('.co')) {
-                   if(urlObj.hostname.includes('linktr.ee')) return urlObj.href; // Allow linktrees
-                   return ''; 
-              }
+              if (urlObj.hostname.includes('linktr.ee')) return urlObj.href; // Allow linktrees
+              return ''; // It's a random website, discard it.
           }
       } catch(e) {
           // Fails URL parsing, treat as raw handle
@@ -303,7 +306,11 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
       handle = handle.split('?')[0]; // Strip query params
       
       if (!handle) return '';
-      if (handle.includes('.com') || handle.includes('.co')) return ''; // Catch straggling domains
+      // Catch any remaining straggling domains that made it this far
+      if (handle.includes('.com') || handle.includes('.co') || handle.includes('.net') || handle.includes('.org')) return ''; 
+      
+      // Prevent insanely long strings of garbage
+      if (handle.length > 50) return '';
 
       const domains = {
           'instagram': 'https://www.instagram.com/',
@@ -516,7 +523,7 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     document.getElementById('profile-modal').classList.remove('open');
   }
 
-  function saveData() { localStorage.setItem('tmx_leads_v9', JSON.stringify(leads)); }
+  function saveData() { localStorage.setItem('tmx_leads_v10', JSON.stringify(leads)); }
   function clearData() { if(confirm('Are you sure you want to clear all leads?')) { leads = []; saveData(); filterAndRender(); } }
 </script>
 

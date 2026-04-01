@@ -55,7 +55,7 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 .upload-title{font-family:var(--fh);font-size:18px;font-weight:700;margin-bottom:8px}
 
 /* ── LEADS GRID & CARDS ── */
-.leads-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.leads-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
 .lcard{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);padding:20px;display:flex;flex-direction:column;transition:all 0.2s;position:relative;}
 .lcard:hover{border-color:var(--border3); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2);}
 .lcard-head{display:flex;justify-content:space-between;margin-bottom:8px;}
@@ -72,17 +72,15 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 
 .status-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px; padding-top: 12px; border-top: 1px solid var(--border2);}
 .status-label{font-size:10px;font-family:var(--fm);text-transform:uppercase;color:var(--muted);}
-.status-sel{font-size:11px;padding:4px 8px;border-radius:6px;background:var(--surface2); cursor: pointer;}
+.status-sel{font-size:11px;padding:4px 8px;border-radius:6px;background:var(--surface2); cursor: pointer; color: var(--text); border: 1px solid var(--border3);}
 
 .socials-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
-.social-btn{padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;border:1px solid var(--border2);background:var(--surface2);color:var(--muted2);transition:all 0.15s;}
+.social-btn{padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;border:1px solid var(--border2);background:var(--surface2);color:var(--muted2);transition:all 0.15s; display: flex; align-items: center; gap: 4px;}
 .social-btn:hover{background:var(--surface3);color:var(--text);}
 
-.card-btns{display:flex;gap:8px;margin-bottom:12px;}
+.card-btns{display:flex;gap:8px;margin-top: auto;}
 .cb{flex:1;padding:8px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--surface2);color:var(--text);transition:all 0.15s;}
 .cb:hover{background:var(--surface3); border-color: var(--border3);}
-.profile-btn{width:100%;padding:10px;background:var(--bg);border:1px solid var(--border3);border-radius:8px;color:var(--muted2);font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;}
-.profile-btn:hover{background:var(--surface2);color:var(--text);}
 
 /* ── MODAL ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.2s;}
@@ -91,7 +89,7 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 .modal-header{display:flex;justify-content:space-between;align-items:center;}
 .modal-title{font-family:var(--fh);font-size:20px;font-weight:700;}
 .modal-close{background:none;border:none;color:var(--muted2);font-size:24px;cursor:pointer;}
-textarea.script-box{width:100%;height:200px;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:16px;font-family:var(--fb);font-size:13px;resize:none;line-height:1.6;}
+textarea.script-box{width:100%;height:220px;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:16px;font-family:var(--fb);font-size:13px;resize:none;line-height:1.6;}
 
 .hidden{display:none !important;}
 </style>
@@ -128,7 +126,7 @@ textarea.script-box{width:100%;height:200px;background:var(--bg);border:1px soli
         <option value="Not Contacted">Not Contacted</option>
         <option value="Emailed">Emailed</option>
         <option value="Replied">Replied</option>
-        <option value="Closed">Closed</option>
+        <option value="Closed">Closed 🎉</option>
       </select>
       <button class="btn" onclick="clearData()" style="color: var(--red); border-color: rgba(248,113,113,0.3);">🗑 Clear All</button>
     </div>
@@ -179,7 +177,7 @@ textarea.script-box{width:100%;height:200px;background:var(--bg);border:1px soli
 
   // Initialize
   window.onload = () => {
-    const saved = localStorage.getItem('tmx_leads_v2');
+    const saved = localStorage.getItem('tmx_leads_v3');
     if (saved) { leads = JSON.parse(saved); renderGrid(); }
   };
 
@@ -194,10 +192,22 @@ textarea.script-box{width:100%;height:200px;background:var(--bg);border:1px soli
     });
   }
 
+  // Helper to format social links flawlessly
+  function formatSocial(raw, baseUrl) {
+    if (!raw) return '';
+    raw = raw.trim();
+    if (raw.startsWith('http')) return raw;
+    if (raw.includes('.com') || raw.includes('.net') || raw.includes('.org')) return 'https://' + raw;
+    if (raw.startsWith('@')) raw = raw.substring(1);
+    // Remove any trailing slashes from base URL if raw has a leading slash
+    if (baseUrl.endsWith('/') && raw.startsWith('/')) raw = raw.substring(1);
+    return baseUrl + raw;
+  }
+
   function processCSV(rows, headers) {
     const getVal = (row, keys) => {
       for (let k of keys) {
-        const match = headers.find(h => h.toLowerCase().includes(k));
+        const match = headers.find(h => h.toLowerCase().includes(k.toLowerCase()));
         if (match && row[match]) return row[match].trim();
       }
       return '';
@@ -205,18 +215,46 @@ textarea.script-box{width:100%;height:200px;background:var(--bg);border:1px soli
 
     const newLeads = rows.map((row, idx) => {
       let url = getVal(row, ['domain', 'store', 'website', 'url']);
-      let name = getVal(row, ['name', 'title']);
+      let name = getVal(row, ['company name', 'name', 'title']);
       if (!name && url) name = url.replace('www.', '').split('.')[0];
       
-      let ig = getVal(row, ['instagram', 'ig', 'handle']);
-      let email = getVal(row, ['email']);
+      let email = getVal(row, ['emails', 'email 1', 'email']);
+      // Some CSVs bundle emails like "test@test.com, admin@test.com"
+      if (email && email.includes(',')) email = email.split(',')[0].trim();
+      
+      let location = getVal(row, ['city', 'location']) + (getVal(row, ['country code', 'country']) ? ', ' + getVal(row, ['country code', 'country']) : '');
+      if (location === ', ') location = '';
+
+      // Bulletproof Social Extractors
+      let ig = formatSocial(getVal(row, ['instagram', 'ig']), 'https://instagram.com/');
+      let fb = formatSocial(getVal(row, ['facebook', 'fb']), 'https://facebook.com/');
+      let tw = formatSocial(getVal(row, ['twitter', 'x.com']), 'https://twitter.com/');
+      let tt = formatSocial(getVal(row, ['tiktok']), 'https://tiktok.com/@');
+      let yt = formatSocial(getVal(row, ['youtube', 'yt']), 'https://youtube.com/');
+      let li = formatSocial(getVal(row, ['linkedin']), 'https://linkedin.com/');
+
+      // WhatsApp / Phone parsing
+      let rawPhone = getVal(row, ['phones', 'phone 1', 'phone', 'mobile', 'whatsapp']);
+      let wa = '';
+      if (rawPhone) {
+        let digits = rawPhone.replace(/[^0-9]/g, '');
+        // Usually, a valid international number has at least 10 digits
+        if (digits.length >= 10) wa = 'https://wa.me/' + digits;
+      }
       
       return {
         id: 'L' + Date.now() + idx,
         name: name || 'Unknown Brand',
         url: url,
         email: email,
+        location: location,
         ig: ig,
+        fb: fb,
+        tw: tw,
+        tt: tt,
+        yt: yt,
+        li: li,
+        wa: wa,
         niche: getVal(row, ['niche', 'category', 'industry']) || 'E-commerce',
         followers: getVal(row, ['follower', 'audience', 'products']),
         status: 'Not Contacted'
@@ -256,10 +294,20 @@ textarea.script-box{width:100%;height:200px;background:var(--bg);border:1px soli
         <div class="niche-tag">${l.niche}</div>
         
         <div class="info-list">
-          <div class="info-row"><span class="ii">✉️</span><span class="iv ${l.email ? '' : 'miss'}">${l.email || 'No email found'}</span></div>
-          <div class="info-row"><span class="ii">🛒</span><span class="iv ${l.url ? '' : 'miss'}">${l.url ? `<a href="${l.url.startsWith('http') ? l.url : 'https://'+l.url}" target="_blank">${l.url}</a>` : 'No store URL'}</span></div>
-          ${l.ig ? `<div class="info-row"><span class="ii">📸</span><span class="iv">${l.ig}</span></div>` : ''}
+          <div class="info-row"><span class="ii">✉️</span><span class="iv ${l.email ? '' : 'miss'}">${l.email ? `<a href="mailto:${l.email}">${l.email}</a>` : 'No email found'}</span></div>
+          <div class="info-row"><span class="ii">🛒</span><span class="iv ${l.url ? '' : 'miss'}">${l.url ? `<a href="${l.url.startsWith('http') ? l.url : 'https://'+l.url}" target="_blank">${l.url.replace('https://','').replace('http://','')}</a>` : 'No store URL'}</span></div>
+          ${l.location && l.location.trim() !== ',' ? `<div class="info-row"><span class="ii">📍</span><span class="iv">${l.location}</span></div>` : ''}
           ${l.followers ? `<div class="info-row"><span class="ii">📦</span><span class="iv">${l.followers}</span></div>` : ''}
+        </div>
+
+        <div class="socials-row">
+          ${l.ig ? `<a href="${l.ig}" target="_blank" class="social-btn">📸 IG</a>` : ''}
+          ${l.wa ? `<a href="${l.wa}" target="_blank" class="social-btn">💬 WA</a>` : ''}
+          ${l.fb ? `<a href="${l.fb}" target="_blank" class="social-btn">👥 FB</a>` : ''}
+          ${l.tw ? `<a href="${l.tw}" target="_blank" class="social-btn">𝕏 X</a>` : ''}
+          ${l.tt ? `<a href="${l.tt}" target="_blank" class="social-btn">🎵 TT</a>` : ''}
+          ${l.yt ? `<a href="${l.yt}" target="_blank" class="social-btn">▶️ YT</a>` : ''}
+          ${l.li ? `<a href="${l.li}" target="_blank" class="social-btn">💼 IN</a>` : ''}
         </div>
 
         <div class="status-row">
@@ -272,14 +320,7 @@ textarea.script-box{width:100%;height:200px;background:var(--bg);border:1px soli
           </select>
         </div>
 
-        <div class="socials-row">
-          ${l.url ? `<a href="${l.url.startsWith('http') ? l.url : 'https://'+l.url}" target="_blank" class="social-btn">🛒 Store</a>` : ''}
-          ${l.ig ? `<a href="${l.ig.startsWith('http') ? l.ig : 'https://instagram.com/'+l.ig.replace('@','')}" target="_blank" class="social-btn">📸 IG</a>` : ''}
-          ${l.email ? `<a href="mailto:${l.email}" class="social-btn">✉️ Mail</a>` : ''}
-        </div>
-
         <div class="card-btns">
-          <button class="cb" onclick="openScriptModal('${l.id}', 'audit')">🔍 Quick Audit</button>
           <button class="cb" onclick="openScriptModal('${l.id}', 'pitch')">✍️ Write Pitch</button>
         </div>
       </div>
@@ -306,12 +347,7 @@ textarea.script-box{width:100%;height:200px;background:var(--bg);border:1px soli
     document.getElementById('modal-brand').innerText = lead.name;
     const firstName = lead.name.split(' ')[0] || 'there';
     
-    let text = '';
-    if (type === 'pitch') {
-      text = `Hi ${firstName},\n\nI was browsing ${lead.niche.toLowerCase()} brands today and really loved the aesthetic of ${lead.name}.\n\nI'm a Shopify UI/UX developer. I spent a few minutes on your store and noticed a couple of friction points on your product pages that are likely causing visitors to bounce before adding to cart.\n\nAre you open to a quick 10-minute chat this week? I'd love to share a couple of specific ideas on how to tighten up the UX and improve your conversion rate.\n\nBest,\nTeejay`;
-    } else {
-      text = `[Internal Audit Notes for ${lead.name}]\n\nNiche: ${lead.niche}\nStore: ${lead.url || 'N/A'}\n\nImmediate UI/UX opportunities to pitch:\n1. Check mobile add-to-cart visibility.\n2. Review product image hierarchy.\n3. Identify missing trust signals on checkout.\n\nNext step: Send pitch email.`;
-    }
+    let text = `Hi ${firstName},\n\nI was browsing ${lead.niche.toLowerCase()} brands today and really loved the aesthetic of ${lead.name}.\n\nI'm a Shopify UI/UX designer and developer. I spent a few minutes on your store and noticed a couple of friction points on your product pages that are likely causing visitors to bounce before adding to cart.\n\nAre you open to a quick 10-minute chat this week? I'd love to share a couple of specific ideas on how to tighten up the UX and improve your conversion rate.\n\nBest,\nTeejay`;
     
     document.getElementById('script-text').value = text;
     document.getElementById('script-modal').classList.add('open');
@@ -330,7 +366,7 @@ textarea.script-box{width:100%;height:200px;background:var(--bg);border:1px soli
     setTimeout(() => btn.innerText = originalText, 2000);
   }
 
-  function saveData() { localStorage.setItem('tmx_leads_v2', JSON.stringify(leads)); }
+  function saveData() { localStorage.setItem('tmx_leads_v3', JSON.stringify(leads)); }
   function clearData() { if(confirm('Are you sure you want to clear all leads?')) { leads = []; saveData(); renderGrid(); } }
 </script>
 

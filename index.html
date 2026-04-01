@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TeeJay Max — Leads Manager</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&family=DM+Mono:wght@400;500&display=swap');
 
 :root {
+  /* DARK MODE (Default) */
   --bg: #08090d; --bg2: #0d0e15; --sidebar: #0a0b12;
   --surface: #0f1018; --surface2: #141520; --surface3: #1a1b2a;
   --border: rgba(255,255,255,0.04); --border2: rgba(255,255,255,0.07); --border3: rgba(255,255,255,0.13);
@@ -19,18 +21,29 @@
   --r: 12px; --rl: 18px; --sw: 224px;
 }
 
+/* LIGHT MODE OVERRIDES */
+body.light-mode {
+  --bg: #f3f4f6; --bg2: #ffffff; --sidebar: #ffffff;
+  --surface: #ffffff; --surface2: #f9fafb; --surface3: #e5e7eb;
+  --border: rgba(0,0,0,0.06); --border2: rgba(0,0,0,0.1); --border3: rgba(0,0,0,0.15);
+  --text: #111827; --muted: #9ca3af; --muted2: #4b5563;
+  --accent: #6b21a8; --accent2: #7e22ce; --accent3: #581c87; --accentbg: rgba(126, 34, 206, 0.08);
+}
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{height:100vh;background:var(--bg);color:var(--text);font-family:var(--fb);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden;display:flex;}
+body{height:100vh;background:var(--bg);color:var(--text);font-family:var(--fb);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden;display:flex;transition:background 0.3s, color 0.3s;}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border3);border-radius:99px}
 
 /* ── SIDEBAR ── */
-.sidebar{width:var(--sw);background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:10;}
+.sidebar{width:var(--sw);background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:10;transition:background 0.3s, border 0.3s;}
 .sb-brand{padding:22px 18px;border-bottom:1px solid var(--border)}
 .sb-name{font-family:var(--fh);font-size:18px;font-weight:800;background:linear-gradient(135deg,var(--accent3),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .sb-nav{flex:1;padding:16px 10px;display:flex;flex-direction:column;gap:4px}
 .nav-item{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:9px;font-weight:600;color:var(--accent3);background:var(--accentbg);border:1px solid rgba(124,92,191,0.2);cursor:pointer;}
+.theme-toggle{margin:auto 10px 20px; padding:10px 12px; border-radius:9px; cursor:pointer; background:var(--surface2); border:1px solid var(--border2); color:var(--text); font-weight:600; display:flex; align-items:center; gap:8px; justify-content:center;}
+.theme-toggle:hover{background:var(--surface3);}
 
 /* ── MAIN ── */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
@@ -45,8 +58,6 @@ input[type=text], select{background:var(--surface2);border:1px solid var(--borde
 input[type=text]:focus, select:focus{border-color:var(--accent2);}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border3);background:var(--surface2);color:var(--text);transition:all 0.15s;font-family:var(--fb);}
 .btn:hover{background:var(--surface3); border-color: var(--muted);}
-.btn-accent{background:var(--accent);color:#fff; border-color: var(--accent);}
-.btn-accent:hover{background:var(--accent2); border-color: var(--accent2);}
 
 /* ── UPLOAD ZONE ── */
 .upload-zone{border:2px dashed var(--border3);border-radius:var(--rl);padding:60px 24px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface);margin-bottom:24px;position:relative}
@@ -57,14 +68,14 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 /* ── LEADS GRID & CARDS ── */
 .leads-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
 .lcard{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);padding:20px;display:flex;flex-direction:column;transition:all 0.2s;position:relative;}
-.lcard:hover{border-color:var(--border3); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2);}
+.lcard:hover{border-color:var(--border3); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.15);}
 .lcard-head{display:flex;justify-content:space-between;margin-bottom:8px;}
 .lcard-name{font-family:var(--fh);font-size:16px;font-weight:700;}
 .niche-tag{font-size:10px;font-family:var(--fm);padding:4px 10px;border-radius:99px;background:var(--accentbg);border:1px solid rgba(124,92,191,0.2);color:var(--accent3);display:inline-block;margin-bottom:12px;}
 
 .info-list{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
 .info-row{display:flex;align-items:center;gap:8px;font-size:12px;}
-.ii{width:18px;text-align:center;opacity:0.8;}
+.ii{width:18px;text-align:center;opacity:0.8; font-size:14px;}
 .iv{color:var(--muted2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
 .iv a{color:var(--accent3);text-decoration:none;}
 .iv a:hover{text-decoration:underline;}
@@ -74,29 +85,60 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 .status-label{font-size:10px;font-family:var(--fm);text-transform:uppercase;color:var(--muted);}
 .status-sel{font-size:11px;padding:4px 8px;border-radius:6px;background:var(--surface2); cursor: pointer; color: var(--text); border: 1px solid var(--border3);}
 
-.socials-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
-.social-btn{padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;border:1px solid var(--border2);background:var(--surface2);color:var(--muted2);transition:all 0.15s; display: flex; align-items: center; gap: 4px;}
-.social-btn:hover{background:var(--surface3);color:var(--text);}
+.socials-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.social-btn{padding:6px 10px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;border:1px solid var(--border2);background:var(--surface2);color:var(--muted2);transition:all 0.15s; display: flex; align-items: center; gap: 6px;}
+.social-btn:hover{background:var(--surface3);color:var(--text); border-color:var(--border3);}
+/* Brand Colors on Hover */
+.social-btn.ig:hover{color: #E1306C; border-color: #E1306C;}
+.social-btn.wa:hover{color: #25D366; border-color: #25D366;}
+.social-btn.fb:hover{color: #1877F2; border-color: #1877F2;}
+.social-btn.tw:hover{color: #1DA1F2; border-color: #1DA1F2;}
+.social-btn.yt:hover{color: #FF0000; border-color: #FF0000;}
 
+.card-btns{display:flex;gap:8px;margin-top: auto;}
+.cb{flex:1;padding:10px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--border2);background:var(--surface2);color:var(--text);transition:all 0.15s;}
+.cb:hover{background:var(--surface3); border-color: var(--border3);}
+
+/* ── PROFILE MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{background:var(--surface);border:1px solid var(--border3);border-radius:var(--rl);width:100%;max-width:500px;padding:32px; display:flex;flex-direction:column;gap:20px; position:relative; max-height: 90vh; overflow-y: auto;}
+.modal-close{position:absolute;top:20px;right:24px;background:none;border:none;color:var(--muted2);font-size:24px;cursor:pointer; transition: color 0.2s;}
+.modal-close:hover{color:var(--text);}
+.prof-header{border-bottom: 1px solid var(--border2); padding-bottom: 16px;}
+.prof-title{font-family:var(--fh);font-size:24px;font-weight:800; margin-bottom:4px;}
+.prof-url{color:var(--accent2); text-decoration: none; font-weight: 500;}
+.prof-url:hover{text-decoration: underline;}
+.prof-section{display:flex; flex-direction:column; gap:8px;}
+.prof-label{font-size:10px; font-family:var(--fm); text-transform:uppercase; color:var(--muted); letter-spacing:1px;}
+.prof-val{font-size:14px; font-weight:500; color:var(--text); background: var(--surface2); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border2);}
+.prof-socials{display:flex; gap:8px; flex-wrap:wrap; margin-top: 8px;}
+
+/* ── LOAD MORE ── */
+.load-more-container { text-align: center; padding: 20px 0; grid-column: 1 / -1; }
 .hidden{display:none !important;}
 </style>
 </head>
-<body>
+<body class="dark-mode">
 
 <aside class="sidebar">
   <div class="sb-brand">
     <div class="sb-name">TeeJay Max</div>
   </div>
   <nav class="sb-nav">
-    <div class="nav-item">🎯 Leads Manager</div>
+    <div class="nav-item"><i class="fa-solid fa-bullseye"></i> Leads Manager</div>
   </nav>
+  
+  <button class="theme-toggle" onclick="toggleTheme()">
+    <i class="fa-solid fa-circle-half-stroke"></i> Toggle Theme
+  </button>
 </aside>
 
 <main class="main">
   <header class="topbar">
     <div>
       <div class="topbar-title">Bootleads Pipeline</div>
-      <div class="topbar-sub">Filter, analyze, and outreach.</div>
+      <div class="topbar-sub">Filter, analyze, and organize your prospects.</div>
     </div>
     <div style="font-size: 12px; color: var(--muted2);">
       Total: <span id="stat-total" style="color:var(--text);font-weight:600;">0</span> | 
@@ -104,7 +146,7 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     </div>
   </header>
 
-  <div class="content">
+  <div class="content" id="scroll-area">
     
     <div class="leads-bar" id="leads-bar" style="display:none;">
       <input type="text" id="search" placeholder="Search brands, locations, niches..." style="flex:1; min-width: 200px;">
@@ -115,28 +157,65 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
         <option value="Replied">Replied</option>
         <option value="Closed">Closed 🎉</option>
       </select>
-      <button class="btn" onclick="clearData()" style="color: var(--red); border-color: rgba(248,113,113,0.3);">🗑 Clear All</button>
+      <button class="btn" onclick="clearData()" style="color: var(--red); border-color: rgba(248,113,113,0.3);"><i class="fa-solid fa-trash-can"></i> Clear All</button>
     </div>
 
     <div class="upload-zone" id="drop-zone">
       <input type="file" id="file-input" accept=".csv">
       <div class="upload-title">Drop Bootleads CSV Here</div>
-      <div style="color: var(--muted2);">Your data stays in your browser.</div>
+      <div style="color: var(--muted2);">Processed locally. Zero server uploads.</div>
     </div>
 
     <div class="leads-grid" id="leads-grid"></div>
-
   </div>
 </main>
 
+<div class="modal-overlay" id="profile-modal" onclick="if(event.target===this) closeProfile()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeProfile()"><i class="fa-solid fa-xmark"></i></button>
+    
+    <div class="prof-header">
+      <div class="niche-tag" id="pm-niche" style="margin-bottom:8px;">Niche</div>
+      <div class="prof-title" id="pm-brand">Brand Name</div>
+      <a href="#" target="_blank" class="prof-url" id="pm-url">store.com</a>
+    </div>
+
+    <div class="prof-section">
+      <div class="prof-label">Location</div>
+      <div class="prof-val" id="pm-location">—</div>
+    </div>
+
+    <div class="prof-section">
+      <div class="prof-label">Email</div>
+      <div class="prof-val" id="pm-email">—</div>
+    </div>
+
+    <div class="prof-section">
+      <div class="prof-label">Followers / Products</div>
+      <div class="prof-val" id="pm-followers">—</div>
+    </div>
+
+    <div class="prof-section">
+      <div class="prof-label">Social Channels</div>
+      <div class="prof-socials" id="pm-socials"></div>
+    </div>
+  </div>
+</div>
+
 <script>
   let leads = [];
+  let filteredLeads = [];
+  let displayCount = 50; // CPU Protection: Render in chunks of 50
+
+  // Native Country Expansion (Super lightweight API built into the browser)
+  const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
 
   // DOM Elements
   const dropZone = document.getElementById('drop-zone');
   const fileInput = document.getElementById('file-input');
   const leadsGrid = document.getElementById('leads-grid');
   const leadsBar = document.getElementById('leads-bar');
+  const scrollArea = document.getElementById('scroll-area');
   
   // Listeners
   dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = 'var(--accent2)'; });
@@ -144,35 +223,60 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
   dropZone.addEventListener('drop', e => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); });
   fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
   
-  document.getElementById('search').addEventListener('input', renderGrid);
-  document.getElementById('filter-status').addEventListener('change', renderGrid);
+  document.getElementById('search').addEventListener('input', () => { displayCount = 50; filterAndRender(); });
+  document.getElementById('filter-status').addEventListener('change', () => { displayCount = 50; filterAndRender(); });
+
+  // Infinite Scroll Listener
+  scrollArea.addEventListener('scroll', () => {
+    if (scrollArea.scrollTop + scrollArea.clientHeight >= scrollArea.scrollHeight - 100) {
+      if (displayCount < filteredLeads.length) {
+        displayCount += 50;
+        renderGridChunk();
+      }
+    }
+  });
 
   // Initialize
   window.onload = () => {
-    const saved = localStorage.getItem('tmx_leads_v4');
-    if (saved) { leads = JSON.parse(saved); renderGrid(); }
+    // Check Theme
+    if(localStorage.getItem('tmx_theme') === 'light') { document.body.classList.add('light-mode'); }
+    // Load Data
+    const saved = localStorage.getItem('tmx_leads_v5');
+    if (saved) { leads = JSON.parse(saved); filterAndRender(); }
   };
+
+  function toggleTheme() {
+    const isLight = document.body.classList.toggle('light-mode');
+    localStorage.setItem('tmx_theme', isLight ? 'light' : 'dark');
+  }
 
   function handleFile(file) {
     if (!file) return;
+    dropZone.innerHTML = '<div class="upload-title">Processing Data...</div>';
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      complete: (results) => {
-        processCSV(results.data, results.meta.fields);
-      }
+      complete: (results) => processCSV(results.data, results.meta.fields)
     });
   }
 
-  // Helper to format social links flawlessly
   function formatSocial(raw, baseUrl) {
     if (!raw) return '';
     raw = raw.trim();
     if (raw.startsWith('http')) return raw;
-    if (raw.includes('.com') || raw.includes('.net') || raw.includes('.org')) return 'https://' + raw;
+    if (raw.includes('.com') || raw.includes('.net')) return 'https://' + raw;
     if (raw.startsWith('@')) raw = raw.substring(1);
     if (baseUrl.endsWith('/') && raw.startsWith('/')) raw = raw.substring(1);
     return baseUrl + raw;
+  }
+
+  function expandCountry(code) {
+    if (!code) return '';
+    code = code.trim().toUpperCase();
+    if (code.length === 2) {
+      try { return regionNames.of(code); } catch(e) { return code; }
+    }
+    return code; // Already full name or invalid code
   }
 
   function processCSV(rows, headers) {
@@ -192,16 +296,15 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
       let email = getVal(row, ['emails', 'email 1', 'email']);
       if (email && email.includes(',')) email = email.split(',')[0].trim();
       
-      // Explicit Location Parsing
+      // Smart Location Parsing
       let city = getVal(row, ['city']);
       let state = getVal(row, ['state', 'region', 'province']);
-      let country = getVal(row, ['country', 'country code']);
+      let rawCountry = getVal(row, ['country', 'country code']);
+      let country = expandCountry(rawCountry);
       
-      // Filter out empty values and join them cleanly
       let locationParts = [city, state, country].filter(part => part && part.length > 0);
       let location = locationParts.join(', ');
 
-      // Bulletproof Social Extractors
       let ig = formatSocial(getVal(row, ['instagram', 'ig']), 'https://instagram.com/');
       let fb = formatSocial(getVal(row, ['facebook', 'fb']), 'https://facebook.com/');
       let tw = formatSocial(getVal(row, ['twitter', 'x.com']), 'https://twitter.com/');
@@ -209,7 +312,6 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
       let yt = formatSocial(getVal(row, ['youtube', 'yt']), 'https://youtube.com/');
       let li = formatSocial(getVal(row, ['linkedin']), 'https://linkedin.com/');
 
-      // WhatsApp / Phone parsing
       let rawPhone = getVal(row, ['phones', 'phone 1', 'phone', 'mobile', 'whatsapp']);
       let wa = '';
       if (rawPhone) {
@@ -223,13 +325,7 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
         url: url,
         email: email,
         location: location,
-        ig: ig,
-        fb: fb,
-        tw: tw,
-        tt: tt,
-        yt: yt,
-        li: li,
-        wa: wa,
+        ig: ig, fb: fb, tw: tw, tt: tt, yt: yt, li: li, wa: wa,
         niche: getVal(row, ['niche', 'category', 'industry']) || 'E-commerce',
         followers: getVal(row, ['follower', 'audience', 'products']),
         status: 'Not Contacted'
@@ -238,10 +334,13 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 
     leads = [...leads, ...newLeads];
     saveData();
-    renderGrid();
+    filterAndRender();
+    
+    // Reset dropzone visually
+    dropZone.innerHTML = '<input type="file" id="file-input" accept=".csv"><div class="upload-title">Drop Bootleads CSV Here</div><div style="color: var(--muted2);">Processed locally. Zero server uploads.</div>';
   }
 
-  function renderGrid() {
+  function filterAndRender() {
     if (leads.length === 0) {
       dropZone.style.display = 'block';
       leadsBar.style.display = 'none';
@@ -255,7 +354,7 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     const search = document.getElementById('search').value.toLowerCase();
     const statusFilter = document.getElementById('filter-status').value;
 
-    const filtered = leads.filter(l => {
+    filteredLeads = leads.filter(l => {
       const matchSearch = l.name.toLowerCase().includes(search) || 
                           l.niche.toLowerCase().includes(search) || 
                           (l.location && l.location.toLowerCase().includes(search));
@@ -263,7 +362,15 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
       return matchSearch && matchStatus;
     });
 
-    leadsGrid.innerHTML = filtered.map(l => `
+    renderGridChunk();
+    updateStats();
+  }
+
+  // Renders only the allowed chunk to prevent CPU overload
+  function renderGridChunk() {
+    const toRender = filteredLeads.slice(0, displayCount);
+    
+    leadsGrid.innerHTML = toRender.map(l => `
       <div class="lcard">
         <div class="lcard-head">
           <div class="lcard-name">${l.name}</div>
@@ -271,23 +378,21 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
         <div class="niche-tag">${l.niche}</div>
         
         <div class="info-list">
-          <div class="info-row"><span class="ii">✉️</span><span class="iv ${l.email ? '' : 'miss'}">${l.email ? `<a href="mailto:${l.email}">${l.email}</a>` : 'No email found'}</span></div>
-          <div class="info-row"><span class="ii">🛒</span><span class="iv ${l.url ? '' : 'miss'}">${l.url ? `<a href="${l.url.startsWith('http') ? l.url : 'https://'+l.url}" target="_blank">${l.url.replace('https://','').replace('http://','')}</a>` : 'No store URL'}</span></div>
-          ${l.location ? `<div class="info-row"><span class="ii">📍</span><span class="iv" style="color:var(--text); font-weight:500;">${l.location}</span></div>` : ''}
-          ${l.followers ? `<div class="info-row"><span class="ii">📦</span><span class="iv">${l.followers}</span></div>` : ''}
+          <div class="info-row"><span class="ii"><i class="fa-regular fa-envelope"></i></span><span class="iv ${l.email ? '' : 'miss'}">${l.email ? `<a href="mailto:${l.email}">${l.email}</a>` : 'No email found'}</span></div>
+          <div class="info-row"><span class="ii"><i class="fa-solid fa-cart-shopping"></i></span><span class="iv ${l.url ? '' : 'miss'}">${l.url ? `<a href="${l.url.startsWith('http') ? l.url : 'https://'+l.url}" target="_blank">${l.url.replace('https://','').replace('http://','')}</a>` : 'No store URL'}</span></div>
+          ${l.location ? `<div class="info-row"><span class="ii"><i class="fa-solid fa-location-dot"></i></span><span class="iv" style="color:var(--text); font-weight:500;">${l.location}</span></div>` : ''}
+          ${l.followers ? `<div class="info-row"><span class="ii"><i class="fa-solid fa-box-open"></i></span><span class="iv">${l.followers}</span></div>` : ''}
         </div>
 
         <div class="socials-row">
-          ${l.ig ? `<a href="${l.ig}" target="_blank" class="social-btn">📸 IG</a>` : ''}
-          ${l.wa ? `<a href="${l.wa}" target="_blank" class="social-btn">💬 WA</a>` : ''}
-          ${l.fb ? `<a href="${l.fb}" target="_blank" class="social-btn">👥 FB</a>` : ''}
-          ${l.tw ? `<a href="${l.tw}" target="_blank" class="social-btn">𝕏 X</a>` : ''}
-          ${l.tt ? `<a href="${l.tt}" target="_blank" class="social-btn">🎵 TT</a>` : ''}
-          ${l.yt ? `<a href="${l.yt}" target="_blank" class="social-btn">▶️ YT</a>` : ''}
-          ${l.li ? `<a href="${l.li}" target="_blank" class="social-btn">💼 IN</a>` : ''}
+          ${l.ig ? `<a href="${l.ig}" target="_blank" class="social-btn ig" title="Instagram"><i class="fa-brands fa-instagram"></i> IG</a>` : ''}
+          ${l.wa ? `<a href="${l.wa}" target="_blank" class="social-btn wa" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i> WA</a>` : ''}
+          ${l.fb ? `<a href="${l.fb}" target="_blank" class="social-btn fb" title="Facebook"><i class="fa-brands fa-facebook-f"></i> FB</a>` : ''}
+          ${l.tw ? `<a href="${l.tw}" target="_blank" class="social-btn tw" title="X / Twitter"><i class="fa-brands fa-x-twitter"></i> X</a>` : ''}
+          ${l.li ? `<a href="${l.li}" target="_blank" class="social-btn in" title="LinkedIn"><i class="fa-brands fa-linkedin-in"></i> IN</a>` : ''}
         </div>
 
-        <div class="status-row" style="margin-bottom:0;">
+        <div class="status-row">
           <span class="status-label">Pipeline Status</span>
           <select class="status-sel" onchange="updateStatus('${l.id}', this.value)">
             <option value="Not Contacted" ${l.status === 'Not Contacted' ? 'selected' : ''}>Not Contacted</option>
@@ -296,10 +401,17 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
             <option value="Closed" ${l.status === 'Closed' ? 'selected' : ''}>Closed 🎉</option>
           </select>
         </div>
+
+        <div class="card-btns">
+          <button class="cb" onclick="openProfile('${l.id}')"><i class="fa-regular fa-id-card"></i> View Full Profile</button>
+        </div>
       </div>
     `).join('');
 
-    updateStats();
+    // Add loader trigger text if more exist
+    if (displayCount < filteredLeads.length) {
+      leadsGrid.innerHTML += `<div class="load-more-container"><span style="color:var(--muted2); font-size:12px;"><i class="fa-solid fa-spinner fa-spin"></i> Scroll for more leads...</span></div>`;
+    }
   }
 
   function updateStatus(id, val) {
@@ -312,8 +424,48 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     document.getElementById('stat-contacted').innerText = leads.filter(l => l.status !== 'Not Contacted').length;
   }
 
-  function saveData() { localStorage.setItem('tmx_leads_v4', JSON.stringify(leads)); }
-  function clearData() { if(confirm('Are you sure you want to clear all leads?')) { leads = []; saveData(); renderGrid(); } }
+  // Profile Modal
+  function openProfile(id) {
+    const l = leads.find(x => x.id === id);
+    if(!l) return;
+
+    document.getElementById('pm-brand').innerText = l.name;
+    document.getElementById('pm-niche').innerText = l.niche;
+    
+    const urlEl = document.getElementById('pm-url');
+    if(l.url) {
+      urlEl.href = l.url.startsWith('http') ? l.url : 'https://'+l.url;
+      urlEl.innerText = l.url;
+      urlEl.style.display = 'block';
+    } else {
+      urlEl.style.display = 'none';
+    }
+
+    document.getElementById('pm-location').innerText = l.location || 'No location provided';
+    document.getElementById('pm-email').innerHTML = l.email ? `<a href="mailto:${l.email}" style="color:var(--accent2);">${l.email}</a>` : 'No email provided';
+    document.getElementById('pm-followers').innerText = l.followers || 'No data';
+
+    // Socials Array
+    let socialsHtml = '';
+    if(l.ig) socialsHtml += `<a href="${l.ig}" target="_blank" class="social-btn ig"><i class="fa-brands fa-instagram"></i> Instagram</a>`;
+    if(l.wa) socialsHtml += `<a href="${l.wa}" target="_blank" class="social-btn wa"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>`;
+    if(l.fb) socialsHtml += `<a href="${l.fb}" target="_blank" class="social-btn fb"><i class="fa-brands fa-facebook-f"></i> Facebook</a>`;
+    if(l.tw) socialsHtml += `<a href="${l.tw}" target="_blank" class="social-btn tw"><i class="fa-brands fa-x-twitter"></i> X (Twitter)</a>`;
+    if(l.tt) socialsHtml += `<a href="${l.tt}" target="_blank" class="social-btn"><i class="fa-brands fa-tiktok"></i> TikTok</a>`;
+    if(l.yt) socialsHtml += `<a href="${l.yt}" target="_blank" class="social-btn yt"><i class="fa-brands fa-youtube"></i> YouTube</a>`;
+    if(l.li) socialsHtml += `<a href="${l.li}" target="_blank" class="social-btn in"><i class="fa-brands fa-linkedin-in"></i> LinkedIn</a>`;
+    
+    document.getElementById('pm-socials').innerHTML = socialsHtml || '<span style="color:var(--muted); font-size:12px;">No social channels found</span>';
+
+    document.getElementById('profile-modal').classList.add('open');
+  }
+
+  function closeProfile() {
+    document.getElementById('profile-modal').classList.remove('open');
+  }
+
+  function saveData() { localStorage.setItem('tmx_leads_v5', JSON.stringify(leads)); }
+  function clearData() { if(confirm('Are you sure you want to clear all leads?')) { leads = []; saveData(); filterAndRender(); } }
 </script>
 
 </body>

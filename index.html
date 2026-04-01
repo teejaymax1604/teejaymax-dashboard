@@ -244,8 +244,8 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 
   window.onload = () => {
     if(localStorage.getItem('tmx_theme') === 'light') { document.body.classList.add('light-mode'); }
-    // V8 forces a clean slate to flush bad links
-    const saved = localStorage.getItem('tmx_leads_v8');
+    // IMPORTANT: Bumped to v9 to flush out all corrupted links
+    const saved = localStorage.getItem('tmx_leads_v9');
     if (saved) { leads = JSON.parse(saved); filterAndRender(); }
   };
 
@@ -264,35 +264,66 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     });
   }
 
-  // BULLETPROOF SOCIAL FORMATTER
-  function formatSocial(raw, baseUrl) {
-    if (!raw) return '';
-    raw = raw.trim();
+  // BULLETPROOF SOCIAL URL PARSER
+  function buildSocialLink(raw, platform) {
+      if (!raw) return '';
+      raw = String(raw).trim();
+      const lower = raw.toLowerCase();
+      if (lower === 'n/a' || lower === '-' || lower === 'null' || lower === 'none') return '';
 
-    // If it's a completely different website (like linktr.ee) and already formatted, let it through
-    if (raw.startsWith('http') && !raw.includes('instagram') && !raw.includes('facebook') && !raw.includes('twitter') && !raw.includes('x.com') && !raw.includes('tiktok') && !raw.includes('youtube') && !raw.includes('linkedin')) {
-        return raw;
-    }
+      // Temporarily attach https to test if it's a valid URL
+      let testUrl = raw.startsWith('http') ? raw : 'https://' + raw;
+      
+      try {
+          let urlObj = new URL(testUrl);
+          
+          // 1. If it's a valid URL and contains the platform name, clean query params and return
+          if (urlObj.hostname.includes(platform)) {
+              if (platform === 'instagram' || platform === 'twitter' || platform === 'tiktok') {
+                  return urlObj.origin + urlObj.pathname;
+              }
+              return urlObj.href; // Keep params for FB/LinkedIn
+          }
+          
+          // 2. If Bootleads pasted an entirely different website (like their store domain or linktree), discard it
+          if (urlObj.hostname.includes('.')) {
+              if (urlObj.hostname.includes('.com') || urlObj.hostname.includes('.net') || urlObj.hostname.includes('.co')) {
+                   if(urlObj.hostname.includes('linktr.ee')) return urlObj.href; // Allow linktrees
+                   return ''; 
+              }
+          }
+      } catch(e) {
+          // Fails URL parsing, treat as raw handle
+      }
 
-    // 1. Strip all known social domains to isolate just the handle
-    raw = raw.replace(/^(https?:\/\/)?(www\.)?instagram\.com\/?/i, '');
-    raw = raw.replace(/^(https?:\/\/)?(www\.)?facebook\.com\/?/i, '');
-    raw = raw.replace(/^(https?:\/\/)?(www\.)?twitter\.com\/?/i, '');
-    raw = raw.replace(/^(https?:\/\/)?(www\.)?x\.com\/?/i, '');
-    raw = raw.replace(/^(https?:\/\/)?(www\.)?tiktok\.com\/?/i, '');
-    raw = raw.replace(/^(https?:\/\/)?(www\.)?youtube\.com\/?/i, '');
-    raw = raw.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/(company\/|in\/)?/i, '');
+      // 3. Fallback: Treat as a raw handle
+      let handle = raw;
+      handle = handle.split('/').pop(); // Strip everything before last slash
+      handle = handle.replace(/^@/, ''); // Strip leading @
+      handle = handle.split('?')[0]; // Strip query params
+      
+      if (!handle) return '';
+      if (handle.includes('.com') || handle.includes('.co')) return ''; // Catch straggling domains
 
-    // 2. Clean up the isolated handle
-    if (!baseUrl.includes('youtube.com')) {
-      raw = raw.replace(/^@/, '');   // Remove leading @ except for YouTube
-    }
-    raw = raw.replace(/^\//, '');    // Remove leading slash
-    raw = raw.split('?')[0];         // Remove tracking parameters (like ?igshid=...)
-    raw = raw.replace(/\/$/, '');    // Remove trailing slash
+      const domains = {
+          'instagram': 'https://www.instagram.com/',
+          'facebook': 'https://www.facebook.com/',
+          'twitter': 'https://twitter.com/',
+          'tiktok': 'https://www.tiktok.com/@',
+          'youtube': 'https://www.youtube.com/@',
+          'linkedin': 'https://www.linkedin.com/company/'
+      };
 
-    // 3. Rebuild perfect URL
-    return baseUrl + raw;
+      return domains[platform] + handle;
+  }
+
+  function formatWhatsApp(rawPhone) {
+      if (!rawPhone) return '';
+      let digits = String(rawPhone).replace(/[^0-9+]/g, '');
+      if (digits.startsWith('00')) digits = '+' + digits.slice(2);
+      digits = digits.replace('+', ''); // wa.me prefers no plus
+      if (digits.length >= 10) return 'https://wa.me/' + digits;
+      return '';
   }
 
   function expandCountry(code) {
@@ -329,27 +360,19 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
       let locationParts = [city, state, country].filter(part => part && part.length > 0);
       let location = locationParts.join(', ');
 
-      let ig = formatSocial(getVal(row, ['instagram', 'ig']), 'https://instagram.com/');
-      let fb = formatSocial(getVal(row, ['facebook', 'fb']), 'https://facebook.com/');
-      let tw = formatSocial(getVal(row, ['twitter', 'x.com']), 'https://twitter.com/');
-      let tt = formatSocial(getVal(row, ['tiktok']), 'https://tiktok.com/@');
-      let yt = formatSocial(getVal(row, ['youtube', 'yt']), 'https://youtube.com/');
-      let li = formatSocial(getVal(row, ['linkedin']), 'https://linkedin.com/');
-
-      let rawPhone = getVal(row, ['phones', 'phone 1', 'phone', 'mobile', 'whatsapp']);
-      let wa = '';
-      if (rawPhone) {
-        let digits = rawPhone.replace(/[^0-9]/g, '');
-        if (digits.length >= 10) wa = 'https://wa.me/' + digits;
-      }
-      
       return {
         id: 'L' + Date.now() + idx,
         name: name || 'Unknown Brand',
         url: url,
         email: email,
         location: location,
-        ig: ig, fb: fb, tw: tw, tt: tt, yt: yt, li: li, wa: wa,
+        ig: buildSocialLink(getVal(row, ['instagram', 'ig']), 'instagram'),
+        fb: buildSocialLink(getVal(row, ['facebook', 'fb']), 'facebook'),
+        tw: buildSocialLink(getVal(row, ['twitter', 'x.com']), 'twitter'),
+        tt: buildSocialLink(getVal(row, ['tiktok']), 'tiktok'),
+        yt: buildSocialLink(getVal(row, ['youtube', 'yt']), 'youtube'),
+        li: buildSocialLink(getVal(row, ['linkedin']), 'linkedin'),
+        wa: formatWhatsApp(getVal(row, ['phones', 'phone 1', 'phone', 'mobile', 'whatsapp'])),
         niche: getVal(row, ['niche', 'category', 'industry']) || 'E-commerce',
         followers: getVal(row, ['follower', 'audience', 'products']),
         status: 'Not Contacted'
@@ -493,7 +516,7 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     document.getElementById('profile-modal').classList.remove('open');
   }
 
-  function saveData() { localStorage.setItem('tmx_leads_v8', JSON.stringify(leads)); }
+  function saveData() { localStorage.setItem('tmx_leads_v9', JSON.stringify(leads)); }
   function clearData() { if(confirm('Are you sure you want to clear all leads?')) { leads = []; saveData(); filterAndRender(); } }
 </script>
 

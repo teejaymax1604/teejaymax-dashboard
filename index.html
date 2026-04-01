@@ -3,142 +3,160 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Leads OS — Minimal</title>
+<title>TeeJay Max — Leads Manager</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&family=DM+Mono:wght@400;500&display=swap');
 
-  :root {
-    --bg: #000000;
-    --surface: #0A0A0A;
-    --surface-hover: #141414;
-    --border: #222222;
-    --border-hover: #333333;
-    --text: #EDEDED;
-    --muted: #888888;
-    --accent: #FFFFFF;
-    --radius: 8px;
-    --font: 'Inter', sans-serif;
-  }
+:root {
+  --bg: #08090d; --bg2: #0d0e15; --sidebar: #0a0b12;
+  --surface: #0f1018; --surface2: #141520; --surface3: #1a1b2a;
+  --border: rgba(255,255,255,0.04); --border2: rgba(255,255,255,0.07); --border3: rgba(255,255,255,0.13);
+  --text: #f0f0f8; --muted: rgba(255,255,255,0.30); --muted2: rgba(255,255,255,0.52);
+  --accent: #7c5cbf; --accent2: #a67ff0; --accent3: #c9a8ff; --accentbg: rgba(124,92,191,0.10);
+  --green: #34d399; --amber: #fbbf24; --red: #f87171; --blue: #60a5fa;
+  --fh: 'Syne', sans-serif; --fb: 'DM Sans', sans-serif; --fm: 'DM Mono', monospace;
+  --r: 12px; --rl: 18px; --sw: 224px;
+}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
-  a { color: inherit; text-decoration: none; }
-  button { font-family: inherit; cursor: pointer; border: none; outline: none; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{height:100vh;background:var(--bg);color:var(--text);font-family:var(--fb);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden;display:flex;}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border3);border-radius:99px}
 
-  /* -- LAYOUT -- */
-  .app { display: flex; flex-direction: column; height: 100vh; }
-  .header { padding: 20px 32px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface); }
-  .logo { font-size: 16px; font-weight: 600; letter-spacing: -0.5px; }
-  .stats { display: flex; gap: 16px; font-size: 12px; color: var(--muted); }
-  .stats span { color: var(--text); font-weight: 500; }
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sw);background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:10;}
+.sb-brand{padding:22px 18px;border-bottom:1px solid var(--border)}
+.sb-name{font-family:var(--fh);font-size:18px;font-weight:800;background:linear-gradient(135deg,var(--accent3),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sb-nav{flex:1;padding:16px 10px;display:flex;flex-direction:column;gap:4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:9px;font-weight:600;color:var(--accent3);background:var(--accentbg);border:1px solid rgba(124,92,191,0.2);cursor:pointer;}
 
-  .main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 32px; }
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:64px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0}
+.topbar-title{font-family:var(--fh);font-size:18px;font-weight:700}
+.topbar-sub{font-size:12px;color:var(--muted2)}
 
-  /* -- UPLOAD ZONE -- */
-  .upload-zone { border: 1px dashed var(--border); border-radius: var(--radius); padding: 60px 20px; text-align: center; transition: all 0.2s; background: var(--surface); cursor: pointer; position: relative; }
-  .upload-zone:hover, .upload-zone.drag { border-color: var(--muted); background: var(--surface-hover); }
-  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-  .uz-title { font-size: 15px; font-weight: 500; margin-bottom: 8px; color: var(--text); }
-  .uz-sub { color: var(--muted); }
+/* ── CONTENT & FILTERS ── */
+.content{flex:1;overflow-y:auto;padding:28px;}
+.leads-bar{display:flex;gap:12px;align-items:center;margin-bottom:24px;flex-wrap:wrap; background: var(--surface); padding: 12px 16px; border-radius: var(--r); border: 1px solid var(--border2);}
+input[type=text], select{background:var(--surface2);border:1px solid var(--border3);border-radius:8px;color:var(--text);padding:9px 14px;font-size:13px;font-family:var(--fb);outline:none;}
+input[type=text]:focus, select:focus{border-color:var(--accent2);}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border3);background:var(--surface2);color:var(--text);transition:all 0.15s;font-family:var(--fb);}
+.btn:hover{background:var(--surface3); border-color: var(--muted);}
+.btn-accent{background:var(--accent);color:#fff; border-color: var(--accent);}
+.btn-accent:hover{background:var(--accent2); border-color: var(--accent2);}
 
-  /* -- DATA GRID -- */
-  .grid-container { display: none; flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-  .grid-header { display: grid; grid-template-columns: 2fr 2fr 1.5fr 1fr 100px; padding: 0 16px 12px; border-bottom: 1px solid var(--border); color: var(--muted); font-weight: 500; font-size: 12px; }
-  .grid-body { flex: 1; overflow-y: auto; padding-top: 8px; }
-  
-  .row { display: grid; grid-template-columns: 2fr 2fr 1.5fr 1fr 100px; padding: 12px 16px; align-items: center; border-bottom: 1px solid var(--border); transition: background 0.15s; border-radius: 6px; }
-  .row:hover { background: var(--surface-hover); }
-  
-  .cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 16px; }
-  .brand-name { font-weight: 500; margin-bottom: 2px; }
-  .brand-link { color: var(--muted); font-size: 12px; }
-  .brand-link:hover { color: var(--text); text-decoration: underline; }
+/* ── UPLOAD ZONE ── */
+.upload-zone{border:2px dashed var(--border3);border-radius:var(--rl);padding:60px 24px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface);margin-bottom:24px;position:relative}
+.upload-zone:hover{border-color:var(--accent2);background:var(--accentbg)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.upload-title{font-family:var(--fh);font-size:18px;font-weight:700;margin-bottom:8px}
 
-  .contact-item { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 12px; }
-  .contact-item span { color: var(--muted); cursor: pointer; transition: color 0.15s; }
-  .contact-item span:hover { color: var(--text); }
+/* ── LEADS GRID & CARDS ── */
+.leads-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.lcard{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);padding:20px;display:flex;flex-direction:column;transition:all 0.2s;position:relative;}
+.lcard:hover{border-color:var(--border3); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2);}
+.lcard-head{display:flex;justify-content:space-between;margin-bottom:8px;}
+.lcard-name{font-family:var(--fh);font-size:16px;font-weight:700;}
+.niche-tag{font-size:10px;font-family:var(--fm);padding:4px 10px;border-radius:99px;background:var(--accentbg);border:1px solid rgba(124,92,191,0.2);color:var(--accent3);display:inline-block;margin-bottom:12px;}
 
-  .social-links { display: flex; gap: 8px; }
-  .soc-btn { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: var(--bg); border: 1px solid var(--border); color: var(--muted); transition: all 0.15s; }
-  .soc-btn:hover { background: var(--border); color: var(--text); }
+.info-list{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+.info-row{display:flex;align-items:center;gap:8px;font-size:12px;}
+.ii{width:18px;text-align:center;opacity:0.8;}
+.iv{color:var(--muted2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+.iv a{color:var(--accent3);text-decoration:none;}
+.iv a:hover{text-decoration:underline;}
+.miss{color:var(--red); opacity: 0.7;}
 
-  select.status { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; outline: none; appearance: none; width: 100%; }
-  select.status:hover { border-color: var(--muted); }
-  
-  .btn-action { background: var(--text); color: var(--bg); padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; transition: opacity 0.15s; text-align: center; }
-  .btn-action:hover { opacity: 0.8; }
+.status-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px; padding-top: 12px; border-top: 1px solid var(--border2);}
+.status-label{font-size:10px;font-family:var(--fm);text-transform:uppercase;color:var(--muted);}
+.status-sel{font-size:11px;padding:4px 8px;border-radius:6px;background:var(--surface2); cursor: pointer;}
 
-  /* -- SLIDE OVER -- */
-  .slide-over { position: fixed; top: 0; right: -450px; width: 400px; height: 100vh; background: var(--surface); border-left: 1px solid var(--border); padding: 32px; transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 100; display: flex; flex-direction: column; box-shadow: -10px 0 40px rgba(0,0,0,0.5); }
-  .slide-over.open { right: 0; }
-  .so-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 99; }
-  .so-overlay.open { opacity: 1; pointer-events: all; }
-  
-  .so-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-  .so-title { font-size: 18px; font-weight: 600; }
-  .so-close { background: none; color: var(--muted); font-size: 20px; }
-  .so-close:hover { color: var(--text); }
+.socials-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.social-btn{padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;border:1px solid var(--border2);background:var(--surface2);color:var(--muted2);transition:all 0.15s;}
+.social-btn:hover{background:var(--surface3);color:var(--text);}
 
-  .script-box { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 24px; }
-  .script-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 12px; }
-  textarea { width: 100%; height: 250px; background: transparent; border: none; color: var(--text); font-family: inherit; font-size: 13px; line-height: 1.6; outline: none; resize: none; }
+.card-btns{display:flex;gap:8px;margin-bottom:12px;}
+.cb{flex:1;padding:8px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--surface2);color:var(--text);transition:all 0.15s;}
+.cb:hover{background:var(--surface3); border-color: var(--border3);}
+.profile-btn{width:100%;padding:10px;background:var(--bg);border:1px solid var(--border3);border-radius:8px;color:var(--muted2);font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;}
+.profile-btn:hover{background:var(--surface2);color:var(--text);}
 
-  .btn-primary { width: 100%; background: var(--text); color: var(--bg); padding: 12px; border-radius: 6px; font-size: 13px; font-weight: 600; transition: opacity 0.15s; }
-  .btn-primary:hover { opacity: 0.8; }
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{background:var(--surface);border:1px solid var(--border3);border-radius:var(--rl);width:100%;max-width:600px;padding:28px; display:flex;flex-direction:column;gap:16px;}
+.modal-header{display:flex;justify-content:space-between;align-items:center;}
+.modal-title{font-family:var(--fh);font-size:20px;font-weight:700;}
+.modal-close{background:none;border:none;color:var(--muted2);font-size:24px;cursor:pointer;}
+textarea.script-box{width:100%;height:200px;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:16px;font-family:var(--fb);font-size:13px;resize:none;line-height:1.6;}
 
-  /* -- UTILS -- */
-  .hidden { display: none !important; }
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.hidden{display:none !important;}
 </style>
 </head>
 <body>
 
-<div class="app">
-  <header class="header">
-    <div class="logo">Leads OS</div>
-    <div class="stats">
-      <div>Total: <span id="stat-total">0</span></div>
-      <div>Contacted: <span id="stat-contacted">0</span></div>
-      <button onclick="clearData()" style="background:none; color:var(--muted); text-decoration:underline; font-size:12px; margin-left:16px;">Clear Data</button>
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-name">TeeJay Max</div>
+  </div>
+  <nav class="sb-nav">
+    <div class="nav-item">🎯 Leads Manager</div>
+  </nav>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <div>
+      <div class="topbar-title">Bootleads Pipeline</div>
+      <div class="topbar-sub">Filter, analyze, and outreach.</div>
+    </div>
+    <div style="font-size: 12px; color: var(--muted2);">
+      Total: <span id="stat-total" style="color:var(--text);font-weight:600;">0</span> | 
+      Contacted: <span id="stat-contacted" style="color:var(--green);font-weight:600;">0</span>
     </div>
   </header>
 
-  <main class="main">
+  <div class="content">
+    
+    <div class="leads-bar" id="leads-bar" style="display:none;">
+      <input type="text" id="search" placeholder="Search brands, niches..." style="flex:1; min-width: 200px;">
+      <select id="filter-status">
+        <option value="All">All Statuses</option>
+        <option value="Not Contacted">Not Contacted</option>
+        <option value="Emailed">Emailed</option>
+        <option value="Replied">Replied</option>
+        <option value="Closed">Closed</option>
+      </select>
+      <button class="btn" onclick="clearData()" style="color: var(--red); border-color: rgba(248,113,113,0.3);">🗑 Clear All</button>
+    </div>
+
     <div class="upload-zone" id="drop-zone">
       <input type="file" id="file-input" accept=".csv">
-      <div class="uz-title">Drop your Bootleads CSV here</div>
-      <div class="uz-sub">Stored entirely in your browser. No servers.</div>
+      <div class="upload-title">Drop Bootleads CSV Here</div>
+      <div style="color: var(--muted2);">Your data stays in your browser.</div>
     </div>
 
-    <div class="grid-container hidden" id="grid-container">
-      <div class="grid-header">
-        <div>Brand & Link</div>
-        <div>Contact Info</div>
-        <div>Socials</div>
-        <div>Status</div>
-        <div>Action</div>
-      </div>
-      <div class="grid-body" id="grid-body"></div>
-    </div>
-  </main>
-</div>
+    <div class="leads-grid" id="leads-grid"></div>
 
-<div class="so-overlay" id="overlay" onclick="closePanel()"></div>
-<div class="slide-over" id="slide-panel">
-  <div class="so-header">
-    <div class="so-title" id="panel-brand">Brand Name</div>
-    <button class="so-close" onclick="closePanel()">✕</button>
   </div>
-  
-  <div class="script-box">
-    <div class="script-label">Outreach Script (Editable)</div>
-    <textarea id="script-text"></textarea>
+</main>
+
+<div class="modal-overlay" id="script-modal" onclick="if(event.target===this) closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-brand">Brand Name</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div style="font-size: 11px; font-family: var(--fm); color: var(--accent2); text-transform: uppercase;">Generated Pitch</div>
+    <textarea class="script-box" id="script-text"></textarea>
+    <div style="display:flex; gap: 12px; justify-content: flex-end;">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="copyScript()">📋 Copy Script</button>
+    </div>
   </div>
-  
-  <button class="btn-primary" onclick="copyScript()">Copy to Clipboard</button>
 </div>
 
 <script>
@@ -147,18 +165,21 @@
   // DOM Elements
   const dropZone = document.getElementById('drop-zone');
   const fileInput = document.getElementById('file-input');
-  const gridContainer = document.getElementById('grid-container');
-  const gridBody = document.getElementById('grid-body');
+  const leadsGrid = document.getElementById('leads-grid');
+  const leadsBar = document.getElementById('leads-bar');
   
-  // Drag and Drop
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
-  dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag'); handleFile(e.dataTransfer.files[0]); });
+  // Listeners
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = 'var(--accent2)'; });
+  dropZone.addEventListener('dragleave', () => dropZone.style.borderColor = 'var(--border3)');
+  dropZone.addEventListener('drop', e => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); });
   fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+  
+  document.getElementById('search').addEventListener('input', renderGrid);
+  document.getElementById('filter-status').addEventListener('change', renderGrid);
 
-  // Load from LocalStorage on mount
+  // Initialize
   window.onload = () => {
-    const saved = localStorage.getItem('tj_leads');
+    const saved = localStorage.getItem('tmx_leads_v2');
     if (saved) { leads = JSON.parse(saved); renderGrid(); }
   };
 
@@ -168,12 +189,12 @@
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
-        processBootleads(results.data, results.meta.fields);
+        processCSV(results.data, results.meta.fields);
       }
     });
   }
 
-  function processBootleads(rows, headers) {
+  function processCSV(rows, headers) {
     const getVal = (row, keys) => {
       for (let k of keys) {
         const match = headers.find(h => h.toLowerCase().includes(k));
@@ -185,24 +206,20 @@
     const newLeads = rows.map((row, idx) => {
       let url = getVal(row, ['domain', 'store', 'website', 'url']);
       let name = getVal(row, ['name', 'title']);
-      if (!name && url) name = url.replace('www.', '').split('.')[0].toUpperCase();
-
-      let ig = getVal(row, ['instagram', 'ig']);
-      if (ig && !ig.startsWith('http')) ig = 'https://instagram.com/' + ig.replace('@', '');
-
-      let wa = getVal(row, ['whatsapp', 'wa']);
-      if (wa && !wa.startsWith('http')) wa = 'https://wa.me/' + wa.replace(/[^0-9]/g, '');
-
+      if (!name && url) name = url.replace('www.', '').split('.')[0];
+      
+      let ig = getVal(row, ['instagram', 'ig', 'handle']);
+      let email = getVal(row, ['email']);
+      
       return {
         id: 'L' + Date.now() + idx,
-        name: name || 'Unknown Store',
-        url: url ? (url.startsWith('http') ? url : 'https://' + url) : '',
-        email: getVal(row, ['email']),
-        phone: getVal(row, ['phone', 'mobile']),
-        whatsapp: wa,
+        name: name || 'Unknown Brand',
+        url: url,
+        email: email,
         ig: ig,
-        fb: getVal(row, ['facebook', 'fb']),
-        status: 'Lead'
+        niche: getVal(row, ['niche', 'category', 'industry']) || 'E-commerce',
+        followers: getVal(row, ['follower', 'audience', 'products']),
+        status: 'Not Contacted'
       };
     });
 
@@ -213,45 +230,57 @@
 
   function renderGrid() {
     if (leads.length === 0) {
-      dropZone.classList.remove('hidden');
-      gridContainer.classList.add('hidden');
+      dropZone.style.display = 'block';
+      leadsBar.style.display = 'none';
+      leadsGrid.innerHTML = '';
       return;
     }
 
-    dropZone.classList.add('hidden');
-    gridContainer.classList.remove('hidden');
+    dropZone.style.display = 'none';
+    leadsBar.style.display = 'flex';
 
-    gridBody.innerHTML = leads.map(l => `
-      <div class="row">
-        <div class="cell">
-          <div class="brand-name">${l.name}</div>
-          ${l.url ? `<a href="${l.url}" target="_blank" class="brand-link">${l.url.replace('https://', '').replace('www.', '')} ↗</a>` : '<span class="brand-link">No URL</span>'}
+    const search = document.getElementById('search').value.toLowerCase();
+    const statusFilter = document.getElementById('filter-status').value;
+
+    const filtered = leads.filter(l => {
+      const matchSearch = l.name.toLowerCase().includes(search) || l.niche.toLowerCase().includes(search);
+      const matchStatus = statusFilter === 'All' || l.status === statusFilter;
+      return matchSearch && matchStatus;
+    });
+
+    leadsGrid.innerHTML = filtered.map(l => `
+      <div class="lcard">
+        <div class="lcard-head">
+          <div class="lcard-name">${l.name}</div>
         </div>
+        <div class="niche-tag">${l.niche}</div>
         
-        <div class="cell">
-          ${l.email ? `<div class="contact-item">✉️ <span onclick="copyToClip('${l.email}')">${l.email}</span></div>` : ''}
-          ${l.phone ? `<div class="contact-item">📞 <span onclick="copyToClip('${l.phone}')">${l.phone}</span></div>` : ''}
-          ${l.whatsapp ? `<div class="contact-item">💬 <a href="${l.whatsapp}" target="_blank">WhatsApp ↗</a></div>` : ''}
-          ${(!l.email && !l.phone && !l.whatsapp) ? '<span style="color:var(--muted);font-size:12px;">No contact info</span>' : ''}
+        <div class="info-list">
+          <div class="info-row"><span class="ii">✉️</span><span class="iv ${l.email ? '' : 'miss'}">${l.email || 'No email found'}</span></div>
+          <div class="info-row"><span class="ii">🛒</span><span class="iv ${l.url ? '' : 'miss'}">${l.url ? `<a href="${l.url.startsWith('http') ? l.url : 'https://'+l.url}" target="_blank">${l.url}</a>` : 'No store URL'}</span></div>
+          ${l.ig ? `<div class="info-row"><span class="ii">📸</span><span class="iv">${l.ig}</span></div>` : ''}
+          ${l.followers ? `<div class="info-row"><span class="ii">📦</span><span class="iv">${l.followers}</span></div>` : ''}
         </div>
 
-        <div class="cell social-links">
-          ${l.ig ? `<a href="${l.ig}" target="_blank" class="soc-btn" title="Instagram">IG</a>` : ''}
-          ${l.fb ? `<a href="${l.fb}" target="_blank" class="soc-btn" title="Facebook">FB</a>` : ''}
-          ${(!l.ig && !l.fb) ? '<span style="color:var(--muted);font-size:12px;">—</span>' : ''}
-        </div>
-
-        <div class="cell">
-          <select class="status" onchange="updateStatus('${l.id}', this.value)">
-            <option value="Lead" ${l.status === 'Lead' ? 'selected' : ''}>Lead</option>
-            <option value="Contacted" ${l.status === 'Contacted' ? 'selected' : ''}>Contacted</option>
+        <div class="status-row">
+          <span class="status-label">Pipeline Status</span>
+          <select class="status-sel" onchange="updateStatus('${l.id}', this.value)">
+            <option value="Not Contacted" ${l.status === 'Not Contacted' ? 'selected' : ''}>Not Contacted</option>
+            <option value="Emailed" ${l.status === 'Emailed' ? 'selected' : ''}>Emailed</option>
             <option value="Replied" ${l.status === 'Replied' ? 'selected' : ''}>Replied</option>
-            <option value="Closed" ${l.status === 'Closed' ? 'selected' : ''}>Closed</option>
+            <option value="Closed" ${l.status === 'Closed' ? 'selected' : ''}>Closed 🎉</option>
           </select>
         </div>
 
-        <div class="cell">
-          <button class="btn-action" onclick="openPanel('${l.id}')">Pitch</button>
+        <div class="socials-row">
+          ${l.url ? `<a href="${l.url.startsWith('http') ? l.url : 'https://'+l.url}" target="_blank" class="social-btn">🛒 Store</a>` : ''}
+          ${l.ig ? `<a href="${l.ig.startsWith('http') ? l.ig : 'https://instagram.com/'+l.ig.replace('@','')}" target="_blank" class="social-btn">📸 IG</a>` : ''}
+          ${l.email ? `<a href="mailto:${l.email}" class="social-btn">✉️ Mail</a>` : ''}
+        </div>
+
+        <div class="card-btns">
+          <button class="cb" onclick="openScriptModal('${l.id}', 'audit')">🔍 Quick Audit</button>
+          <button class="cb" onclick="openScriptModal('${l.id}', 'pitch')">✍️ Write Pitch</button>
         </div>
       </div>
     `).join('');
@@ -266,46 +295,43 @@
 
   function updateStats() {
     document.getElementById('stat-total').innerText = leads.length;
-    document.getElementById('stat-contacted').innerText = leads.filter(l => l.status !== 'Lead').length;
+    document.getElementById('stat-contacted').innerText = leads.filter(l => l.status !== 'Not Contacted').length;
   }
 
-  function copyToClip(text) {
-    navigator.clipboard.writeText(text);
-    // Simple visual feedback could go here
-  }
-
-  // Slide-over Logic
-  function openPanel(id) {
+  // Modals & Scripts
+  function openScriptModal(id, type) {
     const lead = leads.find(l => l.id === id);
     if(!lead) return;
 
-    document.getElementById('panel-brand').innerText = lead.name;
-    
-    // Auto-generate a clean, designer-focused pitch
+    document.getElementById('modal-brand').innerText = lead.name;
     const firstName = lead.name.split(' ')[0] || 'there';
-    const pitch = `Hi ${firstName},\n\nI was looking through your store earlier today and really love the direction you're taking the brand.\n\nI'm a Shopify developer and UI/UX designer. I noticed a few quick friction points on your product pages that are likely causing visitors to bounce before adding to cart.\n\nAre you open to a quick chat this week? I'd love to share a couple of ideas on how to tighten up the design and improve your conversion rate.\n\nBest,\nTeejay`;
     
-    document.getElementById('script-text').value = pitch;
+    let text = '';
+    if (type === 'pitch') {
+      text = `Hi ${firstName},\n\nI was browsing ${lead.niche.toLowerCase()} brands today and really loved the aesthetic of ${lead.name}.\n\nI'm a Shopify UI/UX developer. I spent a few minutes on your store and noticed a couple of friction points on your product pages that are likely causing visitors to bounce before adding to cart.\n\nAre you open to a quick 10-minute chat this week? I'd love to share a couple of specific ideas on how to tighten up the UX and improve your conversion rate.\n\nBest,\nTeejay`;
+    } else {
+      text = `[Internal Audit Notes for ${lead.name}]\n\nNiche: ${lead.niche}\nStore: ${lead.url || 'N/A'}\n\nImmediate UI/UX opportunities to pitch:\n1. Check mobile add-to-cart visibility.\n2. Review product image hierarchy.\n3. Identify missing trust signals on checkout.\n\nNext step: Send pitch email.`;
+    }
     
-    document.getElementById('overlay').classList.add('open');
-    document.getElementById('slide-panel').classList.add('open');
+    document.getElementById('script-text').value = text;
+    document.getElementById('script-modal').classList.add('open');
   }
 
-  function closePanel() {
-    document.getElementById('overlay').classList.remove('open');
-    document.getElementById('slide-panel').classList.remove('open');
+  function closeModal() {
+    document.getElementById('script-modal').classList.remove('open');
   }
 
   function copyScript() {
     const text = document.getElementById('script-text').value;
-    copyToClip(text);
-    const btn = document.querySelector('.btn-primary');
-    btn.innerText = 'Copied!';
-    setTimeout(() => btn.innerText = 'Copy to Clipboard', 2000);
+    navigator.clipboard.writeText(text);
+    const btn = document.querySelector('.modal .btn-accent');
+    const originalText = btn.innerText;
+    btn.innerText = '✅ Copied!';
+    setTimeout(() => btn.innerText = originalText, 2000);
   }
 
-  function saveData() { localStorage.setItem('tj_leads', JSON.stringify(leads)); }
-  function clearData() { if(confirm('Clear all leads?')) { leads = []; saveData(); renderGrid(); } }
+  function saveData() { localStorage.setItem('tmx_leads_v2', JSON.stringify(leads)); }
+  function clearData() { if(confirm('Are you sure you want to clear all leads?')) { leads = []; saveData(); renderGrid(); } }
 </script>
 
 </body>

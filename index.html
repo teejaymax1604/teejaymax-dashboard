@@ -37,11 +37,11 @@ body{height:100vh;background:var(--bg);color:var(--text);font-family:var(--fb);f
 ::-webkit-scrollbar-thumb{background:var(--border3);border-radius:99px}
 
 /* ── MOBILE OVERLAY ── */
-.mob-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9; backdrop-filter:blur(2px); opacity:0; transition:opacity 0.3s; }
+.mob-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:19; backdrop-filter:blur(2px); opacity:0; transition:opacity 0.3s; }
 .mob-overlay.show { display:block; opacity:1; }
 
 /* ── SIDEBAR ── */
-.sidebar{width:var(--sw);background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:10;transition:transform 0.3s ease, background 0.3s, border 0.3s;}
+.sidebar{width:var(--sw);background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:20;transition:transform 0.3s ease, background 0.3s, border 0.3s;}
 .sb-brand{padding:22px 18px;border-bottom:1px solid var(--border)}
 .sb-name{font-family:var(--fh);font-size:18px;font-weight:800;background:linear-gradient(135deg,var(--accent3),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .sb-nav{flex:1;padding:16px 10px;display:flex;flex-direction:column;gap:4px}
@@ -131,17 +131,23 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 .load-more-container { text-align: center; padding: 20px 0; grid-column: 1 / -1; }
 .hidden{display:none !important;}
 
+/* ── BOTTOM NAVIGATION (MOBILE ONLY) ── */
+.mob-nav { display: none; }
+
 /* ── MOBILE RESPONSIVENESS ── */
 @media (max-width: 768px) {
+  /* Sidebar slides from left */
   .sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); width: 260px; box-shadow: 4px 0 24px rgba(0,0,0,0.5); }
   .sidebar.open { transform: translateX(0); }
-  .menu-btn { display: block; }
+  
+  /* Hide the top-left menu button completely since we have bottom nav */
+  .menu-btn { display: none; }
   
   .topbar { padding: 0 16px; height: 60px; }
   .topbar-title { font-size: 16px; }
   .topbar-sub { display: none; } /* Hide subtitle on small screens */
   
-  .content { padding: 16px; }
+  .content { padding: 16px; padding-bottom: 100px; /* Make room for bottom nav */ }
   
   /* Stack the filters and search bar */
   .leads-bar { flex-direction: column; align-items: stretch; gap: 10px; padding: 16px; }
@@ -155,6 +161,42 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
   .prof-title { font-size: 20px; }
   
   .upload-zone { padding: 40px 16px; }
+
+  /* ── THE iOS BOTTOM NAV ── */
+  .mob-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(15, 16, 24, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    z-index: 80;
+    /* Safe area for iPhone Home Bar */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  body.light-mode .mob-nav {
+    background: rgba(255, 255, 255, 0.85);
+  }
+
+  .mob-nav button {
+    flex: 1;
+    padding: 12px 0 10px;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 600;
+    font-family: var(--fb);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+  .mob-nav button i { font-size: 20px; color: var(--text); }
+  .mob-nav button:active { opacity: 0.7; }
 }
 </style>
 </head>
@@ -178,7 +220,6 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 <main class="main">
   <header class="topbar">
     <div class="topbar-left">
-      <button class="menu-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
       <div>
         <div class="topbar-title">Bootleads Pipeline</div>
         <div class="topbar-sub">Filter, analyze, and organize your prospects.</div>
@@ -216,6 +257,21 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     <div class="leads-grid" id="leads-grid"></div>
   </div>
 </main>
+
+<nav class="mob-nav">
+  <button onclick="toggleSidebar()">
+    <i class="fa-solid fa-bars"></i>
+    <span>Menu</span>
+  </button>
+  <button onclick="mobSearch()">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span>Search</span>
+  </button>
+  <button onclick="document.getElementById('file-input').click()">
+    <i class="fa-solid fa-cloud-arrow-up"></i>
+    <span>Upload</span>
+  </button>
+</nav>
 
 <div class="modal-overlay" id="profile-modal" onclick="if(event.target===this) closeProfile()">
   <div class="modal">
@@ -284,10 +340,24 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 
   window.onload = () => {
     if(localStorage.getItem('tmx_theme') === 'light') { document.body.classList.add('light-mode'); }
-    // V13 initialized for mobile responsiveness
-    const saved = localStorage.getItem('tmx_leads_v13');
+    // V14 applies the new Mobile Bottom Nav logic
+    const saved = localStorage.getItem('tmx_leads_v14');
     if (saved) { leads = JSON.parse(saved); filterAndRender(); }
   };
+
+  // MOBILE BOTTOM NAV - SEARCH FUNCTION
+  function mobSearch() {
+    const searchInput = document.getElementById('search');
+    // If the leads-bar is visible, scroll to it and focus.
+    if (document.getElementById('leads-bar').style.display !== 'none') {
+      scrollArea.scrollTo({ top: 0, behavior: 'smooth' });
+      // Short delay allows the smooth scroll to start before pulling up the keyboard
+      setTimeout(() => searchInput.focus(), 300);
+    } else {
+      // If there are no leads yet, trigger upload
+      document.getElementById('file-input').click();
+    }
+  }
 
   function toggleSidebar() {
     sidebar.classList.toggle('open');
@@ -584,7 +654,7 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     document.getElementById('profile-modal').classList.remove('open');
   }
 
-  function saveData() { localStorage.setItem('tmx_leads_v13', JSON.stringify(leads)); }
+  function saveData() { localStorage.setItem('tmx_leads_v14', JSON.stringify(leads)); }
   
   function clearData() { 
     if(confirm('Are you sure you want to clear all leads?')) { 

@@ -46,16 +46,16 @@ body{height:100vh;background:var(--bg);color:var(--text);font-family:var(--fb);f
 .sb-name{font-family:var(--fh);font-size:18px;font-weight:800;background:linear-gradient(135deg,var(--accent3),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .sb-nav{flex:1;padding:16px 10px;display:flex;flex-direction:column;gap:4px}
 .nav-item{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:9px;font-weight:600;color:var(--accent3);background:var(--accentbg);border:1px solid rgba(124,92,191,0.2);cursor:pointer;}
-.theme-toggle{margin:auto 10px 20px; padding:10px 12px; border-radius:9px; cursor:pointer; background:var(--surface2); border:1px solid var(--border2); color:var(--text); font-weight:600; display:flex; align-items:center; gap:8px; justify-content:center;}
-.theme-toggle:hover{background:var(--surface3);}
 
 /* ── MAIN ── */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden; position:relative;}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:64px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0}
 .topbar-left {display:flex; align-items:center; gap:16px;}
-.menu-btn {display:none; background:none; border:none; color:var(--text); font-size:20px; cursor:pointer; padding:4px;}
+.topbar-right {display:flex; align-items:center; gap:16px;}
 .topbar-title{font-family:var(--fh);font-size:18px;font-weight:700}
 .topbar-sub{font-size:12px;color:var(--muted2)}
+.theme-btn {background:var(--surface2); border:1px solid var(--border2); color:var(--text); width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s;}
+.theme-btn:hover {background:var(--surface3); border-color:var(--border3);}
 
 /* ── CONTENT & FILTERS ── */
 .content{flex:1;overflow-y:auto;padding:28px;}
@@ -136,33 +136,25 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 
 /* ── MOBILE RESPONSIVENESS ── */
 @media (max-width: 768px) {
-  /* Sidebar slides from left */
   .sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); width: 260px; box-shadow: 4px 0 24px rgba(0,0,0,0.5); }
   .sidebar.open { transform: translateX(0); }
   
-  /* Hide the top-left menu button completely since we have bottom nav */
-  .menu-btn { display: none; }
-  
   .topbar { padding: 0 16px; height: 60px; }
   .topbar-title { font-size: 16px; }
-  .topbar-sub { display: none; } /* Hide subtitle on small screens */
+  .topbar-sub { display: none; } 
   
-  .content { padding: 16px; padding-bottom: 100px; /* Make room for bottom nav */ }
+  .content { padding: 16px; padding-bottom: 100px; }
   
-  /* Stack the filters and search bar */
   .leads-bar { flex-direction: column; align-items: stretch; gap: 10px; padding: 16px; }
   input[type=text], select, .btn { width: 100%; }
   
-  /* Make grid 1 column */
   .leads-grid { grid-template-columns: 1fr; }
   
-  /* Adjust modal for mobile */
   .modal { padding: 24px 20px; max-height: 85vh; }
   .prof-title { font-size: 20px; }
   
   .upload-zone { padding: 40px 16px; }
 
-  /* ── THE iOS BOTTOM NAV ── */
   .mob-nav {
     display: flex;
     position: fixed;
@@ -172,7 +164,6 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     -webkit-backdrop-filter: blur(12px);
     border-top: 1px solid var(--border);
     z-index: 80;
-    /* Safe area for iPhone Home Bar */
     padding-bottom: env(safe-area-inset-bottom);
   }
   
@@ -211,10 +202,6 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
   <nav class="sb-nav">
     <div class="nav-item" onclick="if(window.innerWidth <= 768) toggleSidebar();"><i class="fa-solid fa-bullseye"></i> Leads Manager</div>
   </nav>
-  
-  <button class="theme-toggle" onclick="toggleTheme()">
-    <i class="fa-solid fa-circle-half-stroke"></i> Toggle Theme
-  </button>
 </aside>
 
 <main class="main">
@@ -225,9 +212,14 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
         <div class="topbar-sub">Filter, analyze, and organize your prospects.</div>
       </div>
     </div>
-    <div style="font-size: 12px; color: var(--muted2); text-align: right;">
-      Total: <span id="stat-total" style="color:var(--text);font-weight:600;">0</span><br> 
-      Contacted: <span id="stat-contacted" style="color:var(--green);font-weight:600;">0</span>
+    <div class="topbar-right">
+      <div style="font-size: 12px; color: var(--muted2); text-align: right;">
+        Total: <span id="stat-total" style="color:var(--text);font-weight:600;">0</span><br> 
+        Contacted: <span id="stat-contacted" style="color:var(--green);font-weight:600;">0</span>
+      </div>
+      <button class="theme-btn" onclick="toggleTheme()" title="Toggle Theme">
+        <i class="fa-solid fa-moon" id="theme-icon"></i>
+      </button>
     </div>
   </header>
 
@@ -235,6 +227,18 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     
     <div class="leads-bar" id="leads-bar" style="display:none;">
       <input type="text" id="search" placeholder="Search brands, locations, niches...">
+      
+      <select id="filter-platform" title="Filter by Social Channel">
+        <option value="All">All Channels</option>
+        <option value="ig">📸 Instagram Only</option>
+        <option value="wa">💬 WhatsApp Only</option>
+        <option value="fb">👥 Facebook Only</option>
+        <option value="tw">𝕏 X (Twitter) Only</option>
+        <option value="tt">🎵 TikTok Only</option>
+        <option value="li">💼 LinkedIn Only</option>
+        <option value="email">✉️ Email Only</option>
+      </select>
+
       <select id="filter-status">
         <option value="All">All Statuses</option>
         <option value="Not Contacted">Not Contacted</option>
@@ -328,6 +332,7 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
   
   document.getElementById('search').addEventListener('input', () => { displayCount = 50; filterAndRender(); });
   document.getElementById('filter-status').addEventListener('change', () => { displayCount = 50; filterAndRender(); });
+  document.getElementById('filter-platform').addEventListener('change', () => { displayCount = 50; filterAndRender(); });
 
   scrollArea.addEventListener('scroll', () => {
     if (scrollArea.scrollTop + scrollArea.clientHeight >= scrollArea.scrollHeight - 100) {
@@ -339,22 +344,21 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
   });
 
   window.onload = () => {
-    if(localStorage.getItem('tmx_theme') === 'light') { document.body.classList.add('light-mode'); }
-    // V14 applies the new Mobile Bottom Nav logic
-    const saved = localStorage.getItem('tmx_leads_v14');
+    if(localStorage.getItem('tmx_theme') === 'light') { 
+      document.body.classList.add('light-mode'); 
+      document.getElementById('theme-icon').className = 'fa-solid fa-sun';
+    }
+    // V15 adds the new Topbar Toggle and Channel Filter
+    const saved = localStorage.getItem('tmx_leads_v15');
     if (saved) { leads = JSON.parse(saved); filterAndRender(); }
   };
 
-  // MOBILE BOTTOM NAV - SEARCH FUNCTION
   function mobSearch() {
     const searchInput = document.getElementById('search');
-    // If the leads-bar is visible, scroll to it and focus.
     if (document.getElementById('leads-bar').style.display !== 'none') {
       scrollArea.scrollTo({ top: 0, behavior: 'smooth' });
-      // Short delay allows the smooth scroll to start before pulling up the keyboard
       setTimeout(() => searchInput.focus(), 300);
     } else {
-      // If there are no leads yet, trigger upload
       document.getElementById('file-input').click();
     }
   }
@@ -367,6 +371,7 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
   function toggleTheme() {
     const isLight = document.body.classList.toggle('light-mode');
     localStorage.setItem('tmx_theme', isLight ? 'light' : 'dark');
+    document.getElementById('theme-icon').className = isLight ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
   }
 
   function handleFile(file) {
@@ -388,7 +393,6 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
       const lower = raw.toLowerCase();
       if (lower === 'n/a' || lower === '-' || lower === 'null' || lower === 'none') return '';
 
-      // JUNK FILTER - Kill IP Addresses
       let checkJunk = raw.replace(/^@/, '').trim();
       const ipRegex = /^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/;
       if (ipRegex.test(checkJunk)) return ''; 
@@ -537,13 +541,21 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
 
     const search = document.getElementById('search').value.toLowerCase();
     const statusFilter = document.getElementById('filter-status').value;
+    const platformFilter = document.getElementById('filter-platform').value;
 
     filteredLeads = leads.filter(l => {
       const matchSearch = l.name.toLowerCase().includes(search) || 
                           l.niche.toLowerCase().includes(search) || 
                           (l.location && l.location.toLowerCase().includes(search));
       const matchStatus = statusFilter === 'All' || l.status === statusFilter;
-      return matchSearch && matchStatus;
+      
+      let matchPlatform = true;
+      if (platformFilter !== 'All') {
+          // Because our object keys perfectly match the dropdown values (ig, wa, fb, etc.)
+          matchPlatform = !!l[platformFilter]; 
+      }
+
+      return matchSearch && matchStatus && matchPlatform;
     });
 
     renderGridChunk();
@@ -654,7 +666,7 @@ input[type=text]:focus, select:focus{border-color:var(--accent2);}
     document.getElementById('profile-modal').classList.remove('open');
   }
 
-  function saveData() { localStorage.setItem('tmx_leads_v14', JSON.stringify(leads)); }
+  function saveData() { localStorage.setItem('tmx_leads_v15', JSON.stringify(leads)); }
   
   function clearData() { 
     if(confirm('Are you sure you want to clear all leads?')) { 
